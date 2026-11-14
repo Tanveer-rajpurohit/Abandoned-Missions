@@ -5,62 +5,64 @@
  * Core: raw palette values. Nothing in a component should use these directly.
  * Semantic: what a colour is for. Components bind to these only.
  *
- * Space (dark) is the default because the story scenes sit on NASA photos with a black sky.
- * Paper (light) is opted into per page or section with data-theme="paper".
+ * The home page is off-white and near-black: the NASA photos carry all the colour.
+ * Light is the default; dark is opted into with data-theme="dark" on <html>.
+ * Mission story pages can later swap in their own land colours (Moon grey, Mars rust).
  */
 :root {
   /* core */
-  --core-paper: #eae6de;
-  --core-paper-raised: #f3f0ea;
-  --core-paper-line: #d3cec4;
-  --core-ink: #16171a;
-  --core-ink-muted: #55575e;
-  --core-space: #0b0c0f;
-  --core-space-raised: #16181d;
-  --core-space-line: #2a2d35;
-  --core-dust: #a8a49b;
-  --core-earth: #226192;
-  --core-earth-bright: #5b9ad0;
-  --core-foil: #ef8557;
+  --core-white: #f4f3ef;
+  --core-white-raised: #ffffff;
+  --core-white-sunken: #eae8e2;
+  --core-white-line: #d9d7d0;
+  --core-black: #0d0d0c;
+  --core-black-raised: #161615;
+  --core-black-sunken: #050505;
+  --core-black-line: #2a2a28;
+  --core-grey-dark: #5f5e59;
+  --core-grey-light: #a3a19a;
 
-  /* semantic: space */
-  --surface: var(--core-space);
-  --surface-raised: var(--core-space-raised);
-  --border: var(--core-space-line);
-  --text: var(--core-paper);
-  --text-muted: var(--core-dust);
-  --accent: var(--core-foil);
-  --link: var(--core-earth-bright);
-  --focus: var(--core-foil);
-
-  color-scheme: dark;
-}
-
-/* Foil orange is about 2:1 on paper, so in this mode it stays a fill and Earth blue carries text accents. */
-[data-theme="paper"] {
-  --surface: var(--core-paper);
-  --surface-raised: var(--core-paper-raised);
-  --border: var(--core-paper-line);
-  --text: var(--core-ink);
-  --text-muted: var(--core-ink-muted);
-  --accent: var(--core-earth);
-  --link: var(--core-earth);
-  --focus: var(--core-earth);
+  /* semantic: light */
+  --surface: var(--core-white);
+  --surface-raised: var(--core-white-raised);
+  --surface-sunken: var(--core-white-sunken);
+  --border: var(--core-white-line);
+  --text: var(--core-black);
+  --text-muted: var(--core-grey-dark);
+  --accent: var(--core-black);
+  --accent-hover: #2b2b29;
+  --on-accent: var(--core-white);
+  --focus: var(--core-black);
 
   color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --surface: var(--core-black);
+  --surface-raised: var(--core-black-raised);
+  --surface-sunken: var(--core-black-sunken);
+  --border: var(--core-black-line);
+  --text: var(--core-white);
+  --text-muted: var(--core-grey-light);
+  --accent: var(--core-white);
+  --accent-hover: #d9d7d0;
+  --on-accent: var(--core-black);
+  --focus: var(--core-white);
+
+  color-scheme: dark;
 }
 
 @theme inline {
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
   --color-border: var(--border);
   --color-text: var(--text);
   --color-text-muted: var(--text-muted);
   --color-accent: var(--accent);
-  --color-link: var(--link);
+  --color-accent-hover: var(--accent-hover);
+  --color-on-accent: var(--on-accent);
   --color-focus: var(--focus);
-  --color-foil: var(--core-foil);
-  --color-earth: var(--core-earth);
 
   --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-commit-mono), ui-monospace, "Cascadia Mono", Consolas, monospace;
@@ -72,28 +74,28 @@
  */
 @utility text-display {
   font-family: var(--font-sans);
-  font-size: 4.5rem; /* 72px */
-  line-height: 1;
-  font-weight: 500;
-  letter-spacing: -0.03em;
+  font-size: 6rem; /* 96px */
+  line-height: 0.95;
+  font-weight: 400;
+  letter-spacing: -0.045em;
   text-wrap: balance;
 }
 
 @utility text-h1 {
   font-family: var(--font-sans);
-  font-size: 3rem; /* 48px */
+  font-size: 3.75rem; /* 60px */
   line-height: 1;
-  font-weight: 500;
-  letter-spacing: -0.025em;
+  font-weight: 400;
+  letter-spacing: -0.035em;
   text-wrap: balance;
 }
 
 @utility text-h2 {
   font-family: var(--font-sans);
-  font-size: 1.875rem; /* 30px */
-  line-height: 2.25rem;
+  font-size: 2.25rem; /* 36px */
+  line-height: 2.5rem;
   font-weight: 500;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.025em;
   text-wrap: balance;
 }
 
@@ -148,18 +150,59 @@
   letter-spacing: 0.04em;
 }
 
+/* Section labels: "(01) Why these machines". Small, spaced capitals that sit above a headline. */
+@utility text-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem; /* 12px */
+  line-height: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 /* Large display sizes step down on phones so headlines do not overflow at 390px. */
 @media (width < 48rem) {
   .text-display {
     font-size: 3rem;
+    line-height: 1;
   }
   .text-h1 {
-    font-size: 2.25rem;
-    line-height: 2.5rem;
+    font-size: 2.5rem;
+    line-height: 1.05;
+  }
+  .text-h2 {
+    font-size: 1.75rem;
+    line-height: 2.25rem;
   }
 }
 
 @layer base {
+  /*
+   * Hairline scrollbar in the theme's colours. Chrome drops the ::-webkit-scrollbar sizing as
+   * soon as the standard scrollbar-width is set, and "thin" there is still wide, so the standard
+   * properties only apply where WebKit scrollbars don't exist (Firefox).
+   */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--surface);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
+  @supports not selector(::-webkit-scrollbar) {
+    html {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) var(--surface);
+    }
+  }
+
   body {
     background: var(--surface);
     color: var(--text);
@@ -173,6 +216,6 @@
 
   ::selection {
     background: var(--accent);
-    color: var(--core-space);
+    color: var(--on-accent);
   }
 }

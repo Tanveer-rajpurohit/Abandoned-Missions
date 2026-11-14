@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk } from "next/font/google";
 import localFont from "next/font/local";
+import { SmoothScroll } from "@/components/SmoothScroll";
+import { THEME_STORAGE_KEY } from "@/lib/theme";
 import "./globals.css";
 
 // Variable font: one file covers every weight we use (400, 500, 600).
@@ -55,14 +57,31 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0c0f",
-  colorScheme: "dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f4f3ef" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d0d0c" },
+  ],
+  colorScheme: "light dark",
 };
+
+// Runs before first paint so a saved dark choice never flashes light. Storage can throw in
+// private windows; then the page simply stays light.
+const THEME_BOOT = `try{if(localStorage.getItem("${THEME_STORAGE_KEY}")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${commitMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">{children}</body>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${spaceGrotesk.variable} ${commitMono.variable} h-full antialiased`}
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+      </head>
+      {/* Browser extensions (ColorZilla and others) add attributes to <body> before hydration. */}
+      <body suppressHydrationWarning className="flex min-h-full flex-col">
+        <SmoothScroll>{children}</SmoothScroll>
+      </body>
     </html>
   );
 }
