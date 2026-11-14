@@ -257,7 +257,8 @@ export function EagleStory() {
           poem.style.transform = `translate3d(0, ${shift}px, 0)`;
           lines.forEach((line) => {
             const centre = line.offsetTop + line.offsetHeight / 2 + shift;
-            const far = clamp01(Math.abs(centre - windowH * 0.42) / (windowH * 0.5));
+            // The middle half of the window stays fully sharp; only the outer edges soften.
+            const far = clamp01((Math.abs(centre - windowH * 0.45) / (windowH * 0.5) - 0.5) / 0.5);
             const soft = far * far;
             line.style.opacity = String(1 - soft * 0.9);
             line.style.filter = soft > 0.02 ? `blur(${(soft * 7).toFixed(1)}px)` : "none";
@@ -322,7 +323,7 @@ export function EagleStory() {
 
           <div
             data-reader
-            className="pointer-events-none absolute left-4 top-[12svh] z-[80] h-[36svh] w-[min(30rem,88vw)] overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_22%,black_70%,transparent)] motion-reduce:static motion-reduce:h-auto motion-reduce:px-4 motion-reduce:py-16 motion-reduce:[mask-image:none] sm:left-8 md:left-[10vw] md:top-1/2 md:h-[52svh] md:-translate-y-1/2"
+            className="pointer-events-none absolute left-4 top-[12svh] z-[80] h-[46svh] w-[min(34rem,90vw)] overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_10%,black_86%,transparent)] motion-reduce:static motion-reduce:h-auto motion-reduce:px-4 motion-reduce:py-16 motion-reduce:[mask-image:none] sm:left-8 md:left-[10vw] md:top-1/2 md:h-[72svh] md:-translate-y-1/2"
           >
             <div data-poem className="will-change-transform">
               {CHAPTERS.map((chapter) => (
