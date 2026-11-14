@@ -62,12 +62,16 @@ const EYE_HEIGHT = 2.3;
 
 /** The strip of ground the model covers, in metres. The paint map is stretched over it. */
 const LAND = { x0: -110, width: 220, z0: 6, depth: 64 };
-const PAINT_WIDTH = 1536;
+const PAINT_WIDTH = 2048;
 const PAINT_HEIGHT = Math.round((PAINT_WIDTH * LAND.depth) / LAND.width);
-/** Half the width of the stroke the pointer leaves, in CSS pixels (about 1 to 1.5 cm on a desktop screen). */
-const STROKE_RADIUS = 34;
-/** How long fresh ink keeps spreading outward after it is laid down. */
-const BLEED_SECONDS = 1.3;
+/** Half the width of the brush the pointer drags, in CSS pixels. */
+const STROKE_RADIUS = 44;
+/** How long a stroke lives: it holds its colour for about half of this, then dries back. */
+const PAINT_SECONDS = 7;
+/** How long fresh paint stays wet and keeps running into the paper around it. */
+const WET_SECONDS = 1.4;
+/** Brush dabs sent to the paint simulation per frame. */
+const MAX_DABS = 8;
 
 const NOISE = /* glsl */ `
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -83,6 +87,72 @@ float fbm(vec2 p) {
 }
 `;
 
+const QUAD_VERT = /* glsl */ `
+varying vec2 vUv;
+void main() {
+  vUv = uv;
+  gl_Position = vec4(position.xy, 0.0, 1.0);
+}`;
+
+/*
+ * The paint on the land, simulated on the GPU. Each texel holds two numbers: how much colour is
+ * there (r, which runs down to nothing over PAINT_SECONDS) and how wet it still is (g, which runs
+ * out much sooner). While wet, paint creeps along a slowly turning current and bleeds into the dry
+ * paper beside it along channels in the paper's grain, so a stroke keeps flowing for a moment
+ * after the brush has passed. The brush itself is drawn as dabs along the pointer's path, with
+ * separate bristles that carry different amounts of paint.
+ */
+const SIM_FRAG = /* glsl */ `
+${NOISE}
+uniform sampler2D uPrev;
+uniform vec2 uSize;
+uniform float uDt;
+uniform float uTime;
+uniform int uCount;
+uniform vec4 uFrom[${MAX_DABS}];
+uniform vec4 uBrush[${MAX_DABS}];
+varying vec2 vUv;
+
+// from.xy to from.zw is the dab's path in texels; brush is radius, stretch, bristles, seed.
+float dab(vec2 p, vec4 from, vec4 brush) {
+  vec2 a = vec2(from.x, from.y / brush.y);
+  vec2 b = vec2(from.z, from.w / brush.y);
+  vec2 s = vec2(p.x, p.y / brush.y);
+  vec2 ab = b - a + vec2(1e-3, 0.0);
+  float t = clamp(dot(s - a, ab) / dot(ab, ab), 0.0, 1.0);
+  vec2 off = (s - a - ab * t) / brush.x;
+  vec2 side = normalize(vec2(-ab.y, ab.x));
+  float edge = length(off) + (fbm(p * 0.06 + brush.w) - 0.5) * 0.55;
+  float body = 1.0 - smoothstep(0.62, 1.0, edge);
+  // Across the stroke the bristles leave streaks: some full, some nearly dry.
+  float bristle = smoothstep(0.15, 0.75, noise(vec2(dot(off, side) * 6.5 + brush.w, brush.w * 3.1)));
+  return body * mix(1.0, 0.68 + 0.32 * bristle, brush.z);
+}
+
+void main() {
+  vec2 px = 1.0 / uSize;
+  vec2 cell = vUv * uSize;
+  vec2 paint = texture2D(uPrev, vUv).rg;
+  // Wet paint is carried downstream; it only ever adds, so resampling never blurs the stroke away.
+  vec2 current = vec2(fbm(cell * 0.012 + uTime * 0.18), fbm(cell * 0.012 + 7.3 - uTime * 0.15)) - 0.5;
+  vec2 carried = texture2D(uPrev, vUv - current * px * 3.0).rg;
+  paint = max(paint, carried * vec2(0.985, 0.9) * step(0.05, carried.g));
+
+  vec2 n = max(max(texture2D(uPrev, vUv + vec2(px.x, 0.0)).rg, texture2D(uPrev, vUv - vec2(px.x, 0.0)).rg),
+               max(texture2D(uPrev, vUv + vec2(0.0, px.y)).rg, texture2D(uPrev, vUv - vec2(0.0, px.y)).rg));
+  float channel = smoothstep(0.3, 0.7, fbm(cell * 0.035 + 2.7));
+  float chance = hash(cell + fract(uTime * 7.31) * 97.0);
+  float bleeds = step(chance, n.g * channel * 0.22 * uDt * 60.0);
+  paint = max(paint, bleeds * vec2(n.r * 0.975, n.g * 0.86));
+
+  paint -= vec2(uDt / ${PAINT_SECONDS.toFixed(1)}, uDt / ${WET_SECONDS.toFixed(1)});
+  for (int i = 0; i < ${MAX_DABS}; i++) {
+    if (i >= uCount) break;
+    paint = max(paint, vec2(dab(cell, uFrom[i], uBrush[i])));
+  }
+  gl_FragColor = vec4(max(paint, 0.0), 0.0, 1.0);
+}`;
+
 const GROUND_VERT = /* glsl */ `
 varying vec3 vWorld;
 varying vec3 vNormal;
@@ -96,11 +166,12 @@ void main() {
 }`;
 
 /*
- * The ground is bare paper until it is painted. `uPaint` is a map laid over the land that
- * records where ink has been put down, by the pointer or around a picture as it arrives. It is
- * never erased. The map is read through a slowly turning flow field and a noise threshold, so
- * colour arrives in blotches whose edges curl like ink soaking into wet paper, and pigment
- * pools darker along the edge of each patch the way watercolour dries.
+ * The ground is always there, but faded: a pale, washed-out print of the land. Where the brush
+ * has been, `uPaint` brings it back to full colour and contrast for a few seconds. The paint map
+ * is read through a slowly turning flow field and a noise threshold, so colour arrives in
+ * blotches whose edges curl like ink soaking into wet paper, pigment pools darker along the edge
+ * of each patch, and as the paint dries back the patch shrinks away through the same noise
+ * instead of simply fading out.
  */
 const GROUND_FRAG = /* glsl */ `
 ${NOISE}
@@ -120,8 +191,6 @@ void main() {
   float dist = distance(vWorld, cameraPosition);
   // The Sun is low, so level ground is half lit and every slope reads clearly.
   float lit = smoothstep(-0.2, 0.6, dot(normal, uSun));
-  // Bare paper still shows the shape of the land, as an embossed sheet would, with a little tooth.
-  vec3 paper = uPaper * (0.7 + 0.32 * lit) * (1.0 + (noise(vWorld.xz * 26.0) - 0.5) * 0.05 * (1.0 - smoothstep(2.0, 12.0, dist)));
 
   // Real lunar soil (an Apollo 11 surface photo) laid over the model. Two offset copies are
   // swapped by a noise field so the tile never visibly repeats, and a much larger copy takes
@@ -134,17 +203,27 @@ void main() {
   float fine = level * w.y + texture2D(uSoil, at.xy).r * w.z + texture2D(uSoil, at.zy).r * w.x;
   float broad = texture2D(uSoil, mat2(0.8, -0.6, 0.6, 0.8) * vWorld.xz * 0.071 + 3.7).r;
   float grain = mix(fine * 0.72 + broad * 0.28, broad, smoothstep(5.0, 28.0, dist)) / 0.48;
-  vec3 soil = mix(vTone * uTint * grain * (0.4 + 1.0 * lit), paper, 0.06);
+  vec3 soil = vTone * uTint * grain * (0.4 + 1.0 * lit);
+
+  // At rest most of the colour is drained out and the tones are lifted toward the paper, like a
+  // light first wash. The shape of the land still reads clearly.
+  float luma = dot(soil, vec3(0.299, 0.587, 0.114));
+  vec3 rest = mix(mix(vec3(luma), soil, 0.35), uPaper * (0.72 + 0.3 * lit), 0.42);
 
   vec2 g = vWorld.xz * 0.22;
   float n = fbm(g) * 0.75 + fbm(g * 3.1 + 4.7) * 0.25;
   vec2 flow = vec2(fbm(g * 1.7 + uTime * 0.07), fbm(g * 1.7 + 7.3 - uTime * 0.06)) - 0.5;
-  vec2 uv = vec2((vWorld.x + flow.x * 1.6 - uLand.x) / uLand.y, (uLand.z - vWorld.z - flow.y * 1.6) / uLand.w);
-  float d = texture2D(uPaint, uv).r * 1.8 - 0.36 - n * 0.7;
-  float paint = smoothstep(-0.06, 0.06, d);
-  float pool = paint * (1.0 - smoothstep(0.06, 0.3, d));
+  vec2 uv = vec2((vWorld.x + flow.x * 0.7 - uLand.x) / uLand.y, (uLand.z - vWorld.z - flow.y * 0.7) / uLand.w);
+  vec2 ink = texture2D(uPaint, uv).rg;
+  // Fresh paint holds its colour; once it has dried below about half, the patch shrinks back
+  // through the noise and what is left pales out with it.
+  float d = ink.r - 0.2 - (n - 0.3) * 0.5;
+  float paint = smoothstep(-0.03, 0.05, d) * smoothstep(0.22, 0.55, ink.r);
+  float pool = paint * (1.0 - smoothstep(0.03, 0.2, d));
+  // Wet paint sits a touch darker and richer than dry.
+  vec3 vivid = mix(vec3(luma), soil, 1.15) * (1.0 - ink.g * 0.1);
 
-  vec3 col = mix(paper, soil, paint) * (1.0 - pool * 0.24);
+  vec3 col = mix(rest, vivid, paint) * (1.0 - pool * 0.22);
   gl_FragColor = vec4(mix(col, uHaze, smoothstep(14.0, 60.0, dist)), 1.0);
 }`;
 
@@ -189,16 +268,17 @@ void main() {
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 
-/** A stroke segment or a blot that is still spreading. `k` stretches it away from the camera. */
-interface Ink {
+/** One brush dab for the paint simulation, in paint-map texels. `k` stretches it away from the camera. */
+interface Dab {
   x0: number;
   y0: number;
   x1: number;
   y1: number;
   radius: number;
   k: number;
-  born: number;
-  life: number;
+  /** 1 for a brush with visible bristles, 0 for a soft round blot. */
+  bristles: number;
+  seed: number;
 }
 
 /**
@@ -228,22 +308,47 @@ export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageSt
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(32, 1, 0.3, 400);
 
-    // Where ink has been laid on the land. Only ever added to.
-    const paintCanvas = document.createElement("canvas");
-    paintCanvas.width = PAINT_WIDTH;
-    paintCanvas.height = PAINT_HEIGHT;
-    const paintCtx = paintCanvas.getContext("2d");
-    if (paintCtx) {
-      paintCtx.fillStyle = "#000";
-      paintCtx.fillRect(0, 0, PAINT_WIDTH, PAINT_HEIGHT);
-      paintCtx.lineCap = "round";
-      paintCtx.strokeStyle = "#fff";
+    // The paint on the land: two render targets, each frame read from one and written to the other.
+    const paintTargets = [0, 1].map(
+      () =>
+        new THREE.WebGLRenderTarget(PAINT_WIDTH, PAINT_HEIGHT, {
+          type: THREE.HalfFloatType,
+          format: THREE.RGBAFormat,
+          minFilter: THREE.LinearFilter,
+          magFilter: THREE.LinearFilter,
+          depthBuffer: false,
+          stencilBuffer: false,
+        }),
+    );
+    let paintRead = 0;
+    for (const target of paintTargets) {
+      renderer.setRenderTarget(target);
+      renderer.clear();
     }
-    const paintMap = new THREE.CanvasTexture(paintCanvas);
-    paintMap.flipY = false;
-    paintMap.minFilter = paintMap.magFilter = THREE.LinearFilter;
-    paintMap.generateMipmaps = false;
-    const wetInk: Ink[] = [];
+    renderer.setRenderTarget(null);
+    const simMaterial = new THREE.ShaderMaterial({
+      vertexShader: QUAD_VERT,
+      fragmentShader: SIM_FRAG,
+      depthTest: false,
+      depthWrite: false,
+      uniforms: {
+        uPrev: { value: paintTargets[0].texture },
+        uSize: { value: new THREE.Vector2(PAINT_WIDTH, PAINT_HEIGHT) },
+        uDt: { value: 0 },
+        uTime: { value: 0 },
+        uCount: { value: 0 },
+        uFrom: { value: Array.from({ length: MAX_DABS }, () => new THREE.Vector4()) },
+        uBrush: { value: Array.from({ length: MAX_DABS }, () => new THREE.Vector4(1, 1, 0, 0)) },
+      },
+    });
+    const simGeometry = new THREE.PlaneGeometry(2, 2);
+    const simScene = new THREE.Scene();
+    simScene.add(new THREE.Mesh(simGeometry, simMaterial));
+    const simCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const dabs: Dab[] = [];
+    /** Until when the paint simulation still has something to do: paint drying or dabs queued. */
+    let paintUntil = 0;
+    let strokeSeed = Math.random() * 100;
     const toMap = (x: number, z: number): [number, number] => [((x - LAND.x0) / LAND.width) * PAINT_WIDTH, ((LAND.z0 - z) / LAND.depth) * PAINT_HEIGHT];
     const metre = PAINT_WIDTH / LAND.width;
 
@@ -254,7 +359,7 @@ export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageSt
       fragmentShader: GROUND_FRAG,
       vertexColors: true,
       uniforms: {
-        uPaint: { value: paintMap },
+        uPaint: { value: paintTargets[0].texture },
         uSoil: { value: null as THREE.Texture | null },
         uLand: { value: new THREE.Vector4(LAND.x0, LAND.width, LAND.z0, LAND.depth) },
         uTime: time,
@@ -265,7 +370,7 @@ export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageSt
       },
     });
 
-    const disposables: Array<{ dispose: () => void }> = [paintMap, groundMaterial];
+    const disposables: Array<{ dispose: () => void }> = [...paintTargets, simMaterial, simGeometry, groundMaterial];
     let isDisposed = false;
     let lastActivity = performance.now();
     const wake = () => {
@@ -459,8 +564,8 @@ export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageSt
       // The chapter's light tints the soil: its ground colour, normalised so it only shifts hue.
       groundMaterial.uniforms.uTint.value.fromArray(state.ground).divideScalar(Math.max(...state.ground, 1));
 
-      // The pointer: over open ground it lays ink down. A picture holds still under it; touching
-      // one that is still bare paper is enough to set it painting.
+      // The pointer is a brush: over open ground it lays paint down. A picture holds still under
+      // it; touching one that has not arrived yet is enough to set it painting.
       if (pointer.isInside) {
         raycaster.setFromCamera(ndc, camera);
         const hit = raycaster.intersectObjects(cardMeshes.filter((item) => item.mesh.visible && item.shown > 0.2).map((item) => item.mesh), false)[0];
@@ -474,12 +579,13 @@ export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageSt
             const perPixel = (2 * ground.t * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / size.h;
             const radius = STROKE_RADIUS * perPixel;
             const isStroke = lastHit !== null && now - lastHit.at < 400 && Math.hypot(ground.x - lastHit.x, ground.z - lastHit.z) < radius * 14;
+            if (!isStroke) strokeSeed = Math.random() * 100;
             const from = isStroke && lastHit ? lastHit : ground;
             const [x0, y0] = toMap(from.x, from.z);
             const [x1, y1] = toMap(ground.x, ground.z);
-            // Seen at a low angle, a round blot on the ground looks like a thin sliver. Stretching
+            // Seen at a low angle, a round dab on the ground looks like a thin sliver. Stretching
             // it away from the camera makes the stroke look evenly thick on screen.
-            wetInk.push({ x0, y0, x1, y1, radius: radius * metre, k: Math.min(7, 1 / Math.max(ground.grazing, 0.05)), born: now, life: BLEED_SECONDS });
+            dabs.push({ x0, y0, x1, y1, radius: radius * metre, k: Math.min(7, 1 / Math.max(ground.grazing, 0.05)), bristles: 1, seed: strokeSeed });
             lastHit = { x: ground.x, z: ground.z, at: now };
           }
         }
@@ -488,7 +594,6 @@ export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageSt
 
       for (const item of cardMeshes) {
         const uniforms = item.material.uniforms;
-
         if (item.card.isInSky) {
           // Far enough away that walking does not move it: it only drifts a little with the story.
           item.mesh.position.set(camX + (isNarrow ? 5 : 21) - state.p * (isNarrow ? 2 : 8), item.baseY - (isNarrow ? 8 : 0), -item.card.depth);
@@ -510,34 +615,29 @@ export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageSt
             item.hasBlot = true;
             const [x, y] = toMap(item.mesh.position.x, item.mesh.position.z);
             const radius = (item.card.height * item.card.aspect * 0.6 + 1.2) * metre;
-            wetInk.push({ x0: x, y0: y, x1: x, y1: y, radius, k: 2.2, born: now, life: 3.2 });
+            dabs.push({ x0: x, y0: y, x1: x, y1: y, radius, k: 2.2, bristles: 0, seed: Math.random() * 100 });
           }
         }
       }
 
-      // Fresh ink is redrawn a little wider each frame until it has finished spreading.
-      if (paintCtx && wetInk.length) {
-        paintCtx.globalCompositeOperation = "lighter";
-        for (let i = wetInk.length - 1; i >= 0; i--) {
-          const ink = wetInk[i];
-          const age = (now - ink.born) / 1000 / ink.life;
-          if (age >= 1) {
-            wetInk.splice(i, 1);
-            continue;
-          }
-          const spread = 0.35 + 0.65 * (1 - (1 - age) ** 2);
-          paintCtx.filter = `blur(${Math.max(1, ink.radius * 0.4).toFixed(1)}px)`;
-          paintCtx.globalAlpha = 0.14;
-          paintCtx.lineWidth = ink.radius * 2 * spread;
-          paintCtx.setTransform(1, 0, 0, ink.k, 0, 0);
-          paintCtx.beginPath();
-          paintCtx.moveTo(ink.x0, ink.y0 / ink.k);
-          paintCtx.lineTo(ink.x1, ink.y1 / ink.k + 0.01);
-          paintCtx.stroke();
-        }
-        paintCtx.setTransform(1, 0, 0, 1, 0, 0);
-        paintCtx.filter = "none";
-        paintMap.needsUpdate = true;
+      // Step the paint: lay down queued dabs, let wet paint run, let everything dry back a little.
+      if (dabs.length) paintUntil = now + (PAINT_SECONDS + 0.5) * 1000;
+      if (now < paintUntil) {
+        const uniforms = simMaterial.uniforms;
+        const batch = dabs.splice(0, MAX_DABS);
+        batch.forEach((dab, i) => {
+          (uniforms.uFrom.value[i] as THREE.Vector4).set(dab.x0, dab.y0, dab.x1, dab.y1);
+          (uniforms.uBrush.value[i] as THREE.Vector4).set(dab.radius, dab.k, dab.bristles, dab.seed);
+        });
+        uniforms.uCount.value = batch.length;
+        uniforms.uDt.value = dt;
+        uniforms.uTime.value = time.value;
+        uniforms.uPrev.value = paintTargets[paintRead].texture;
+        paintRead = 1 - paintRead;
+        renderer.setRenderTarget(paintTargets[paintRead]);
+        renderer.render(simScene, simCamera);
+        renderer.setRenderTarget(null);
+        groundMaterial.uniforms.uPaint.value = paintTargets[paintRead].texture;
         wake();
       }
 
