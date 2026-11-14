@@ -1,25 +1,21 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
-import { BEATS, COVER, TICKS } from "@/data/apollo11";
-import { Sources } from "./StoryChrome";
+import type { Story } from "@/data/stories";
+import { ThemePicker } from "@/components/ThemeToggle";
+import { Sources } from "./Sources";
 import { display } from "./fonts";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-/** Two palettes for the same page. `--a`, `--b`, `--c` are the three flat colours behind photos. */
-const THEMES = {
-  paper: { label: "Paper", vars: { "--paper": "#efece4", "--ink": "#1b1f5e", "--a": "#ffd23f", "--b": "#ff5d5d", "--c": "#8ecae6" } },
-  grape: { label: "Grape", vars: { "--paper": "#a9a4f7", "--ink": "#1d1a4d", "--a": "#ffd166", "--b": "#19b8a6", "--c": "#ffc7a8" } },
-} as const;
-type ThemeName = keyof typeof THEMES;
-
-const BLOCKS = ["var(--a)", "var(--b)", "var(--c)"];
+const BLOCKS = ["var(--pop-a)", "var(--pop-b)", "var(--pop-c)"];
+/** Sticker buttons: a flat colour, an ink outline and a hard shadow that presses in. */
+const JUMP = "inline-flex min-h-12 items-center gap-2 rounded-full border-2 border-[var(--ink)] px-5 text-[0.9375rem] font-semibold text-[var(--on-pop)] shadow-[4px_4px_0_var(--ink)] transition-[translate,box-shadow] duration-100 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_var(--ink)] active:translate-x-1 active:translate-y-1 active:shadow-none";
 /** Photos alternate between a square, a portrait and a landscape frame. */
 const FRAMES = ["aspect-square", "aspect-[4/5]", "aspect-[5/4]"];
 
@@ -43,9 +39,8 @@ const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
  * each sits on a flat block of colour, and a timeline along the bottom is drawn by a dot that
  * loops between one moment and the next.
  */
-export function CollageStory() {
+export function CollageStory({ story }: { story: Story }) {
   const rootRef = useRef<HTMLElement>(null);
-  const [theme, setTheme] = useState<ThemeName>("paper");
 
   useGSAP(
     () => {
@@ -164,39 +159,48 @@ export function CollageStory() {
     { scope: rootRef },
   );
 
-  const panels = BEATS.length + 2;
+  const panels = story.beats.length + 2;
 
   return (
-    <article ref={rootRef} style={{ ...(THEMES[theme].vars as React.CSSProperties), height: `${panels * 85}svh` }} className="relative bg-[var(--paper)] text-[var(--ink)] transition-colors duration-300 motion-reduce:!h-auto">
-      <h1 className="sr-only">Eagle: the half of the Apollo 11 lunar module that stayed on the Moon</h1>
+    <article ref={rootRef} style={{ height: `${panels * 85}svh` }} className="relative bg-[var(--paper)] text-[var(--ink)] transition-colors duration-300 motion-reduce:!h-auto">
+      <h1 className="sr-only">{`${story.title}: ${story.subtitle}`}</h1>
 
       <div data-loader aria-hidden="true" className="fixed inset-0 z-[110] overflow-hidden bg-[#0d0d0c] text-white motion-reduce:hidden">
-        {[COVER.image, ...BEATS.map((b) => b.image)].reverse().map((image) => (
+        {[story.cover, ...story.beats.map((b) => b.image)].reverse().map((image) => (
           <Image key={image.src} data-flash src={image.src} alt="" fill priority sizes="100vw" className="invisible object-cover" />
         ))}
-        <p className={`${display.className} absolute bottom-6 left-6 text-[clamp(4rem,14vw,11rem)] font-extrabold leading-none tabular-nums md:bottom-10 md:left-12`}>
+        <p className={`${display.className} absolute bottom-6 left-6 flex items-baseline gap-2 text-[clamp(3rem,8vw,6.5rem)] font-light leading-none tracking-[-0.04em] tabular-nums md:bottom-10 md:left-12`}>
           <span data-count>000</span>
+          <span className="text-[0.35em] tracking-normal">%</span>
         </p>
-        <p className="absolute bottom-8 right-6 text-eyebrow md:bottom-12 md:right-12">Loading the Moon</p>
+        <p className="absolute bottom-8 right-6 text-eyebrow md:bottom-12 md:right-12">Loading {story.title}</p>
       </div>
 
       <div
         data-stage
-        className="sticky top-0 h-svh overflow-hidden bg-[linear-gradient(var(--grid)_1px,transparent_1px),linear-gradient(90deg,var(--grid)_1px,transparent_1px)] bg-[length:48px_48px] [--grid:color-mix(in_srgb,var(--ink)_7%,transparent)] motion-reduce:static motion-reduce:h-auto"
+        className="sticky top-0 h-svh overflow-hidden bg-[linear-gradient(var(--grid)_1px,transparent_1px),linear-gradient(90deg,var(--grid)_1px,transparent_1px)] bg-[length:32px_32px] [--grid:color-mix(in_srgb,var(--ink)_7%,transparent)] motion-reduce:static motion-reduce:h-auto"
       >
-        <div role="group" aria-label="Colour theme" className="absolute right-4 top-16 z-20 flex items-center gap-1 rounded-full border-2 border-[var(--ink)] bg-[var(--paper)] p-1 md:top-4">
-          {(Object.keys(THEMES) as ThemeName[]).map((name) => (
-            <button
-              key={name}
-              type="button"
-              onClick={() => setTheme(name)}
-              aria-pressed={theme === name}
-              className="inline-flex min-h-9 items-center gap-2 rounded-full px-3 text-[0.8125rem] font-medium transition-colors duration-150 hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] active:scale-[0.97] aria-pressed:bg-[var(--ink)] aria-pressed:text-[var(--paper)]"
-            >
-              <span aria-hidden="true" className="size-3 rounded-full border border-current" style={{ background: THEMES[name].vars["--paper"] }} />
-              <span className="max-md:sr-only">{THEMES[name].label}</span>
-            </button>
-          ))}
+        <Link href="/#stories" className="absolute left-4 top-4 z-20 md:left-8 inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-[var(--ink)] bg-[var(--paper)] px-4 text-[0.875rem] font-medium text-[var(--ink)] transition-colors duration-150 hover:bg-[var(--ink)] hover:text-[var(--paper)] active:scale-[0.97]">
+          <span aria-hidden="true">←</span> Back
+        </Link>
+        <ThemePicker className="absolute right-4 top-4 z-20 md:right-8" />
+
+        {/* The other two ways to take the story. */}
+        <div className="absolute bottom-5 right-4 z-20 flex items-center gap-3 md:right-8">
+          {story.scene3d && (
+            <Link href={story.scene3d} className={`${JUMP} bg-[var(--pop-a)]`}>
+              <svg aria-hidden="true" viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
+                <path d="M8 1.5 14 5v6l-6 3.5L2 11V5zM2 5l6 3.5L14 5M8 8.5v6" />
+              </svg>
+              3D view
+            </Link>
+          )}
+          <Link href={`/stories/${story.slug}/play`} className={`${JUMP} bg-[var(--pop-b)]`}>
+            <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+              <path d="M4.5 2.5 13 8l-8.5 5.5z" />
+            </svg>
+            Play
+          </Link>
         </div>
 
         <div data-track className="relative flex h-full w-max will-change-transform motion-reduce:h-auto motion-reduce:w-full motion-reduce:flex-col">
@@ -204,13 +208,13 @@ export function CollageStory() {
           <section className="relative grid h-full w-screen shrink-0 content-center gap-8 px-6 pb-36 pt-24 md:grid-cols-[1.2fr_1fr] md:items-center md:gap-12 md:px-16 motion-reduce:h-auto">
             <div>
               <p data-in className="text-eyebrow">
-                Apollo 11 · 1969 · told by the machine itself
+                {story.eyebrow}
               </p>
               <p data-in aria-hidden="true" className={`${display.className} mt-4 text-[clamp(5.5rem,20vw,18rem)] font-extrabold leading-[0.8] tracking-[-0.05em]`}>
-                {COVER.title}
+                {story.title}
               </p>
               <p data-in className={`${display.className} mt-6 max-w-[18ch] text-[clamp(1.5rem,2.8vw,2.5rem)] font-medium leading-[1.05] tracking-[-0.02em]`}>
-                {COVER.subtitle}
+                {story.subtitle}
               </p>
               <p data-in className="mt-8 inline-flex w-max items-center gap-3 rounded-full bg-[var(--ink)] px-5 py-3 text-[0.9375rem] font-medium text-[var(--paper)] motion-reduce:hidden">
                 Scroll to travel
@@ -218,12 +222,12 @@ export function CollageStory() {
               </p>
             </div>
             <div data-in className="relative mx-auto aspect-[5/4] w-[min(30svh,70vw)] md:aspect-[4/5] md:w-[min(56svh,30vw)]">
-              <div data-drift="0.05" className="absolute -bottom-4 -right-4 left-4 top-4 rounded-[1.25rem] border-2 border-[var(--ink)] bg-[var(--a)]" />
-              <Image src={COVER.image.src} alt={COVER.image.alt} fill priority sizes="(min-width: 768px) 30vw, 70vw" className="rounded-[1.25rem] border-2 border-[var(--ink)] object-cover" />
+              <div data-drift="0.05" className="absolute -bottom-4 -right-4 left-4 top-4 rounded-[1.25rem] border-2 border-[var(--ink)] bg-[var(--pop-a)]" />
+              <Image src={story.cover.src} alt={story.cover.alt} fill priority sizes="(min-width: 768px) 30vw, 70vw" className="rounded-[1.25rem] border-2 border-[var(--ink)] object-cover" />
             </div>
           </section>
 
-          {BEATS.map((beat, i) => (
+          {story.beats.map((beat, i) => (
             <section
               key={beat.id}
               aria-labelledby={`collage-${beat.id}`}
@@ -262,26 +266,26 @@ export function CollageStory() {
               {/* This moment's stop on the timeline. */}
               <div aria-hidden="true" className="absolute bottom-6 left-[12%] motion-reduce:hidden">
                 <span className="absolute bottom-10 left-0 size-4 -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-[var(--ink)] bg-[var(--paper)]" />
-                <span className="block -translate-x-1/2 whitespace-nowrap text-eyebrow">{TICKS[i]}</span>
+                <span className="block -translate-x-1/2 whitespace-nowrap text-eyebrow">{beat.tick}</span>
               </div>
             </section>
           ))}
 
           {/* End */}
           <section className="relative flex h-full w-screen shrink-0 items-center px-6 pb-36 pt-20 md:px-16 motion-reduce:h-auto">
-            <div className="grid w-full gap-8 rounded-[1.25rem] border-2 border-[var(--ink)] bg-[var(--a)] p-8 md:grid-cols-2 md:p-14">
+            <div className="grid w-full gap-8 rounded-[1.25rem] border-2 border-[var(--ink)] bg-[var(--pop-a)] p-8 text-[var(--on-pop)] md:grid-cols-2 md:p-14">
               <div>
                 <p className="text-eyebrow">The end, for now</p>
-                <p className={`${display.className} mt-4 max-w-[12ch] text-[clamp(2.25rem,5vw,4.5rem)] font-extrabold leading-[0.92] tracking-[-0.035em]`}>And I am still standing here.</p>
+                <p className={`${display.className} mt-4 max-w-[16ch] text-balance text-[clamp(2rem,4.2vw,3.75rem)] font-extrabold leading-[0.95] tracking-[-0.035em]`}>{story.ending}</p>
                 <Link
                   href="/#stories"
-                  className="mt-8 inline-flex min-h-12 items-center gap-3 rounded-full bg-[var(--ink)] px-6 font-medium text-[var(--paper)] transition-colors duration-150 hover:bg-[var(--b)] hover:text-[var(--ink)] active:scale-[0.98]"
+                  className="mt-8 inline-flex min-h-12 items-center gap-3 rounded-full bg-[var(--on-pop)] px-6 font-medium text-white transition-colors duration-150 hover:bg-[var(--pop-b)] hover:text-[var(--on-pop)] active:scale-[0.98]"
                 >
                   Meet the other machines
                   <span aria-hidden="true">→</span>
                 </Link>
               </div>
-              <Sources />
+              <Sources sources={story.sources} />
             </div>
           </section>
 
@@ -289,12 +293,12 @@ export function CollageStory() {
             <path data-line pathLength={1} fill="none" stroke="var(--ink)" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="1" strokeDashoffset="1" />
           </svg>
           <div data-dot aria-hidden="true" className="pointer-events-none absolute bottom-6 left-0 motion-reduce:hidden" style={{ height: RAIL_HEIGHT }}>
-            <span className="absolute -left-2.5 -top-2.5 size-5 rounded-full border-2 border-[var(--ink)] bg-[var(--b)]" />
+            <span className="absolute -left-2.5 -top-2.5 size-5 rounded-full border-2 border-[var(--ink)] bg-[var(--pop-b)]" />
           </div>
         </div>
 
         <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1.5 bg-[color-mix(in_srgb,var(--ink)_14%,transparent)] motion-reduce:hidden">
-          <div data-bar className="h-full origin-left scale-x-0 bg-[var(--b)]" />
+          <div data-bar className="h-full origin-left scale-x-0 bg-[var(--pop-b)]" />
         </div>
       </div>
     </article>

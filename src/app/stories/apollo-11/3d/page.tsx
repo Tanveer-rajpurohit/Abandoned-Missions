@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { EagleStory } from "@/components/story/EagleStory";
-import { VersionSwitcher } from "@/components/story/StoryChrome";
 
 export const metadata: Metadata = {
-  title: "Eagle, the half that stayed on the Moon",
+  title: "Eagle in 3D, the half that stayed on the Moon",
   description:
     "The Apollo 11 lunar module tells its own story: the landing, the first steps, the experiments, and the 21 hours before its top half flew home and left it behind.",
 };
@@ -21,18 +20,22 @@ export default function EagleStoryPage() {
       </a>
       <header className="pointer-events-none fixed inset-x-0 top-0 z-50 px-4 pt-3 text-white mix-blend-difference sm:px-8 md:px-12 md:pt-5">
         <div className="flex items-center justify-between gap-4">
-          <Link href="/" className="pointer-events-auto inline-flex min-h-11 items-center text-[1.0625rem] font-medium tracking-[-0.02em]">
-            Abandoned Missions
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/stories/apollo-11" className="pointer-events-auto inline-flex min-h-11 items-center gap-2 rounded-full border border-current px-4 text-[0.9375rem] font-medium active:scale-[0.97]">
+              <span aria-hidden="true">←</span> Back
+            </Link>
+            <Link href="/" className="pointer-events-auto hidden sm:inline-flex min-h-11 items-center text-[1.0625rem] font-medium tracking-[-0.02em]">
+              Abandoned Missions
+            </Link>
+          </div>
           <nav aria-label="Main" className="pointer-events-auto flex items-center gap-1 sm:gap-3">
-            <Link href="/#stories" className="inline-flex min-h-11 items-center px-2 text-[0.9375rem] underline-offset-4 hover:underline">
+            <Link href="/#stories" className="hidden min-h-11 items-center px-2 text-[0.9375rem] underline-offset-4 hover:underline sm:inline-flex">
               All machines
             </Link>
             <ThemeToggle />
           </nav>
         </div>
       </header>
-      <VersionSwitcher current="/stories/apollo-11" />
       <main id="main">
         <EagleStory />
       </main>
