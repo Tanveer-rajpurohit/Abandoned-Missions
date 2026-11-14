@@ -1,26 +1,178 @@
 @import "tailwindcss";
 
+/*
+ * Two colour layers.
+ * Core: raw palette values. Nothing in a component should use these directly.
+ * Semantic: what a colour is for. Components bind to these only.
+ *
+ * Space (dark) is the default because the story scenes sit on NASA photos with a black sky.
+ * Paper (light) is opted into per page or section with data-theme="paper".
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* core */
+  --core-paper: #eae6de;
+  --core-paper-raised: #f3f0ea;
+  --core-paper-line: #d3cec4;
+  --core-ink: #16171a;
+  --core-ink-muted: #55575e;
+  --core-space: #0b0c0f;
+  --core-space-raised: #16181d;
+  --core-space-line: #2a2d35;
+  --core-dust: #a8a49b;
+  --core-earth: #226192;
+  --core-earth-bright: #5b9ad0;
+  --core-foil: #ef8557;
+
+  /* semantic: space */
+  --surface: var(--core-space);
+  --surface-raised: var(--core-space-raised);
+  --border: var(--core-space-line);
+  --text: var(--core-paper);
+  --text-muted: var(--core-dust);
+  --accent: var(--core-foil);
+  --link: var(--core-earth-bright);
+  --focus: var(--core-foil);
+
+  color-scheme: dark;
+}
+
+/* Foil orange is about 2:1 on paper, so in this mode it stays a fill and Earth blue carries text accents. */
+[data-theme="paper"] {
+  --surface: var(--core-paper);
+  --surface-raised: var(--core-paper-raised);
+  --border: var(--core-paper-line);
+  --text: var(--core-ink);
+  --text-muted: var(--core-ink-muted);
+  --accent: var(--core-earth);
+  --link: var(--core-earth);
+  --focus: var(--core-earth);
+
+  color-scheme: light;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-link: var(--link);
+  --color-focus: var(--focus);
+  --color-foil: var(--core-foil);
+  --color-earth: var(--core-earth);
+
+  --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-commit-mono), ui-monospace, "Cascadia Mono", Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/*
+ * Text styles. Sizes and line heights sit on the Tailwind type scale.
+ * Space Grotesk for everything readable; Commit Mono only for mission data.
+ */
+@utility text-display {
+  font-family: var(--font-sans);
+  font-size: 4.5rem; /* 72px */
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+@utility text-h1 {
+  font-family: var(--font-sans);
+  font-size: 3rem; /* 48px */
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+@utility text-h2 {
+  font-family: var(--font-sans);
+  font-size: 1.875rem; /* 30px */
+  line-height: 2.25rem;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+@utility text-title {
+  font-family: var(--font-sans);
+  font-size: 1.25rem; /* 20px */
+  line-height: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Story lines: 18px at 1.6 so ages 10 to 14 can read them over a moving scene. */
+@utility text-story {
+  font-family: var(--font-sans);
+  font-size: 1.125rem; /* 18px */
+  line-height: 1.6;
+  font-weight: 400;
+  text-wrap: pretty;
+}
+
+@utility text-body {
+  font-family: var(--font-sans);
+  font-size: 1rem; /* 16px */
+  line-height: 1.5;
+  font-weight: 400;
+  text-wrap: pretty;
+}
+
+@utility text-caption {
+  font-family: var(--font-sans);
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.25rem;
+  font-weight: 500;
+}
+
+/* Coordinates, dates, mission IDs: fixed-width digits so changing numbers do not jitter. */
+@utility text-data {
+  font-family: var(--font-mono);
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.25rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+@utility text-data-sm {
+  font-family: var(--font-mono);
+  font-size: 0.75rem; /* 12px */
+  line-height: 1rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+/* Large display sizes step down on phones so headlines do not overflow at 390px. */
+@media (width < 48rem) {
+  .text-display {
+    font-size: 3rem;
+  }
+  .text-h1 {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  body {
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-sans);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--core-space);
+  }
 }

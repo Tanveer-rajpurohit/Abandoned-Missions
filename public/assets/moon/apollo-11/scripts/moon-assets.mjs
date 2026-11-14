@@ -157,7 +157,6 @@ function lrrr() {
 
 /** A rock in three planes: lit top, mid face, shadow face. `top` and `split` are indexes into the outline. */
 function rock(pts, ridge) {
-  const lit = pts.filter((p) => p[1] <= ridge[0][1] + 2 || ridge.includes(p));
   return svg(320, 220, {
     shadow: [166, 192, 160, 14],
     shapes: `<path d="${d(pts)}" fill="${DUST}"/>
