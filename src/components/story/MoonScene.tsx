@@ -157,27 +157,18 @@ void main() {
 
 /*
  * A picture is first a blank paper cut-out that grows in, then colour is laid into it. Both
- * stages are driven by `uShown`, which only ever goes up. Under the pointer the finished
- * picture behaves like wet paint: pixels are dragged along the pointer's motion and ripple.
+ * stages are driven by `uShown`, which only ever goes up. It holds still under the pointer.
  */
 const CARD_FRAG = /* glsl */ `
 ${NOISE}
 uniform sampler2D uMap;
 uniform float uShown;
 uniform float uAspect;
-uniform float uTime;
-uniform float uHover;
-uniform vec2 uPointer;
-uniform vec2 uLag;
 uniform vec3 uPaper;
 varying vec2 vUv;
 void main() {
   vec2 q = vUv * vec2(uAspect, 1.0);
-  vec2 toPointer = (vUv - uPointer) * vec2(uAspect, 1.0);
-  float finger = exp(-dot(toPointer, toPointer) * 16.0) * uHover;
-  vec2 swirl = vec2(fbm(q * 4.0 + uTime * 0.5), fbm(q * 4.0 + 5.2 - uTime * 0.45)) - 0.5;
-  vec2 uv = vUv - uLag * finger * 1.6 + swirl * finger * 0.07;
-  vec4 c = texture2D(uMap, clamp(uv, 0.0, 1.0));
+  vec4 c = texture2D(uMap, vUv);
 
   float shapeAt = uShown * 2.4;
   float shape = 1.0 - smoothstep(shapeAt - 0.1, shapeAt, fbm(q * 5.0) * 0.7 + vUv.y * 0.3);
@@ -325,10 +316,6 @@ export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageSt
           uMap: { value: null as THREE.Texture | null },
           uShown: { value: 0 },
           uAspect: { value: card.aspect },
-          uTime: time,
-          uHover: { value: 0 },
-          uPointer: { value: new THREE.Vector2(0.5, 0.5) },
-          uLag: { value: new THREE.Vector2() },
           uPaper: paper,
         },
       });
@@ -353,7 +340,7 @@ export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageSt
       mesh.renderOrder = 1000 - card.depth;
       scene.add(mesh);
       disposables.push(geometry, material);
-      return { card, mesh, material, shown: 0, peak: 0, baseY: card.lift ?? 0, hasBlot: false, hover: 0, target: new THREE.Vector2(0.5, 0.5) };
+      return { card, mesh, material, shown: 0, peak: 0, baseY: card.lift ?? 0, hasBlot: false };
     });
     const cardByMesh = new Map(cardMeshes.map((item) => [item.mesh as THREE.Object3D, item]));
 
@@ -472,18 +459,16 @@ export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageSt
       // The chapter's light tints the soil: its ground colour, normalised so it only shifts hue.
       groundMaterial.uniforms.uTint.value.fromArray(state.ground).divideScalar(Math.max(...state.ground, 1));
 
-      // The pointer: over a picture it stirs the paint; over open ground it lays ink down.
-      let hovered: (typeof cardMeshes)[number] | undefined;
+      // The pointer: over open ground it lays ink down. A picture holds still under it; touching
+      // one that is still bare paper is enough to set it painting.
       if (pointer.isInside) {
         raycaster.setFromCamera(ndc, camera);
         const hit = raycaster.intersectObjects(cardMeshes.filter((item) => item.mesh.visible && item.shown > 0.2).map((item) => item.mesh), false)[0];
-        hovered = hit ? cardByMesh.get(hit.object) : undefined;
-        if (hovered && hit.uv) {
-          hovered.target.copy(hit.uv);
-          // Touching a picture that is still bare paper is enough to set it painting.
+        const hovered = hit ? cardByMesh.get(hit.object) : undefined;
+        if (hovered) {
           hovered.peak = 1;
-        }
-        if (pointer.moved && !hovered) {
+          lastHit = null;
+        } else if (pointer.moved) {
           const ground = hitGround();
           if (ground) {
             const perPixel = (2 * ground.t * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / size.h;
@@ -498,18 +483,11 @@ export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageSt
             lastHit = { x: ground.x, z: ground.z, at: now };
           }
         }
-        if (hovered) lastHit = null;
       }
       pointer.moved = false;
 
       for (const item of cardMeshes) {
         const uniforms = item.material.uniforms;
-        item.hover += ((item === hovered ? 1 : 0) - item.hover) * (1 - Math.exp(-dt * 5));
-        const at = uniforms.uPointer.value as THREE.Vector2;
-        const lag = (uniforms.uLag.value as THREE.Vector2).subVectors(item.target, at);
-        at.addScaledVector(lag, 1 - Math.exp(-dt * 6));
-        uniforms.uHover.value = item.hover;
-        if (item.hover > 0.01) wake();
 
         if (item.card.isInSky) {
           // Far enough away that walking does not move it: it only drifts a little with the story.
