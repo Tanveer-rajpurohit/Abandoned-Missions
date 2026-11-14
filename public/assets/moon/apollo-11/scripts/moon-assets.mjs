@@ -249,7 +249,6 @@ img.night{background:#262a33}
 figcaption{margin-top:12px}
 a{color:inherit}
 </style></head><body>
-<nav><a href="../hairline/hairline-eagle.html">Open the Eagle line figure</a></nav>
 <main>
 ${cards}
 </main></body></html>

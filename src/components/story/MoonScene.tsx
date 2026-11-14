@@ -5,8 +5,15 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
-const TERRAIN = "/assets/moon/apollo-11/3d/tranquility-base.glb";
-const HEIGHTS = "/assets/moon/apollo-11/3d/tranquility-base.heights.json";
+/**
+ * Phones and tablets get a lighter scene: a terrain with under half the triangles (2.6 MB
+ * instead of 6 MB), a paint map a quarter of the size, no multisampling and fewer pixels.
+ * This module only ever runs in the browser, but the guard keeps it safe to import anywhere.
+ */
+const IS_LITE = typeof window !== "undefined" && window.matchMedia("(max-width: 820px), (pointer: coarse)").matches;
+const TERRAIN = IS_LITE ? "/assets/moon/3d/tranquility-base.lite.glb" : "/assets/moon/3d/tranquility-base.glb";
+const MAX_PIXEL_RATIO = IS_LITE ? 1.25 : 1.75;
+const HEIGHTS = "/assets/moon/3d/tranquility-base.heights.json";
 const SOIL = "/assets/moon/apollo-11/real/regolith.jpg";
 
 export type Rgb = [number, number, number];
@@ -37,14 +44,6 @@ export interface Card {
   isInSky?: boolean;
 }
 
-/** A DOM element kept glued to a spot in the scene, for content that is not a picture. */
-export interface Follower {
-  ref: RefObject<HTMLElement | null>;
-  at: number;
-  depth: number;
-  height: number;
-}
-
 interface HeightMap {
   x0: number;
   z0: number;
@@ -62,7 +61,7 @@ const EYE_HEIGHT = 2.3;
 
 /** The strip of ground the model covers, in metres. The paint map is stretched over it. */
 const LAND = { x0: -110, width: 220, z0: 6, depth: 64 };
-const PAINT_WIDTH = 2048;
+const PAINT_WIDTH = IS_LITE ? 1024 : 2048;
 const PAINT_HEIGHT = Math.round((PAINT_WIDTH * LAND.depth) / LAND.width);
 /** Half the width of the brush the pointer drags, in CSS pixels. */
 const STROKE_RADIUS = 44;
@@ -321,7 +320,7 @@ interface Dab {
  * as paper cut-outs at different depths. The camera walks sideways with the story. It only draws
  * while something is changing.
  */
-export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageState>; cards: Card[]; follower?: Follower }) {
+export function MoonScene({ stage, cards }: { stage: RefObject<StageState>; cards: Card[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -331,7 +330,7 @@ export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageSt
 
     let renderer: THREE.WebGLRenderer;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: !IS_LITE, alpha: true, powerPreference: "high-performance" });
     } catch (error: unknown) {
       console.error("Moon scene could not start WebGL", error);
       return;
@@ -522,7 +521,7 @@ export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageSt
     const resize = () => {
       size.w = Math.max(1, host.clientWidth);
       size.h = Math.max(1, host.clientHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO));
       renderer.setSize(size.w, size.h, false);
       camera.aspect = size.w / size.h;
       camera.updateProjectionMatrix();
@@ -679,20 +678,6 @@ export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageSt
         wake();
       }
 
-      if (follower?.ref.current) {
-        const el = follower.ref.current;
-        const x = laneX(follower.at);
-        const y = groundAt(x, -follower.depth);
-        project.set(x, y, -follower.depth).project(camera);
-        const footX = (project.x * 0.5 + 0.5) * size.w;
-        const footY = (1 - (project.y * 0.5 + 0.5)) * size.h;
-        project.set(x, y + follower.height, -follower.depth).project(camera);
-        const px = footY - (1 - (project.y * 0.5 + 0.5)) * size.h;
-        const scale = px / el.offsetHeight;
-        el.style.transform = `translate3d(${footX - (el.offsetWidth * scale) / 2}px, ${footY - px}px, 0) scale(${scale})`;
-        el.style.opacity = String(clamp01((0.96 - footX / size.w) / 0.3) * clamp01((footX / size.w + 0.3) / 0.3));
-      }
-
       renderer.render(scene, camera);
     };
     frame = requestAnimationFrame(render);
@@ -706,7 +691,7 @@ export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageSt
       for (const item of disposables) item.dispose();
       renderer.dispose();
     };
-    // The card list and follower are fixed for the life of the page.
+    // The card list is fixed for the life of the page.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -10,7 +10,6 @@ import { useLenis } from "lenis/react";
 import { ArrowRightIcon } from "@/components/icons";
 import { PillLink } from "@/components/PillLink";
 import { EagleClock } from "@/components/home/EagleClock";
-import { HairlineEagle } from "./HairlineEagle";
 import type { Card, Rgb, StageState } from "./MoonScene";
 
 // three.js and the 6 MB terrain stay out of the first load and never run on the server.
@@ -147,17 +146,14 @@ const card = (key: string, src: string, alt: string, width: number, pixelHeight:
 });
 
 const CARDS = [
-  card("eagle", `${PHOTOS}/eagle.png`, "The lunar module Eagle standing on the Moon, with Buzz Aldrin unloading experiments beside it", 1815, 1574, 0.03, 19, 7.2),
-  card("aldrin", `${PHOTOS}/aldrin.png`, "Buzz Aldrin standing on the Moon in his spacesuit", 336, 719, 0.24, 10, 2.1),
-  card("bootprint", `${PHOTOS}/bootprint.png`, "A single bootprint pressed into the grey lunar soil", 1081, 1197, 0.3, 5.5, 1.5, { lean: 58 }),
-  card("flag", `${PHOTOS}/flag.png`, "The United States flag planted in the lunar soil", 537, 729, 0.44, 12, 2.7),
-  card("seismometer", `${PHOTOS}/easep-seismometer.png`, "The passive seismometer experiment sitting on the lunar surface", 1081, 617, 0.5, 8, 1.8),
+  card("eagle", `${PHOTOS}/eagle.webp`, "The lunar module Eagle standing on the Moon, with Buzz Aldrin unloading experiments beside it", 1815, 1574, 0.03, 19, 7.2),
+  card("aldrin", `${PHOTOS}/aldrin.webp`, "Buzz Aldrin standing on the Moon in his spacesuit", 336, 719, 0.24, 10, 2.1),
+  card("bootprint", `${PHOTOS}/bootprint.webp`, "A single bootprint pressed into the grey lunar soil", 1081, 1197, 0.3, 5.5, 1.5, { lean: 58 }),
+  card("flag", `${PHOTOS}/flag.webp`, "The United States flag planted in the lunar soil", 537, 729, 0.44, 12, 2.7),
+  card("seismometer", `${PHOTOS}/easep-seismometer.webp`, "The passive seismometer experiment sitting on the lunar surface", 1081, 617, 0.5, 8, 1.8),
   card("mirror", `${DRAWINGS}/lrrr-retroreflector.svg`, "Drawing of the laser mirror: a tilted tray of small glass reflectors", 400, 300, 0.575, 9, 1.1),
-  card("earth", `${PHOTOS}/earth.png`, "Planet Earth seen whole from space", 1300, 1300, 0.86, 75, 8, { lift: 15, isInSky: true }),
+  card("earth", `${PHOTOS}/earth.webp`, "Planet Earth seen whole from space", 1300, 1300, 0.86, 75, 8, { lift: 15, isInSky: true }),
 ];
-
-/** The line drawing of the liftoff is live DOM, so it rides along with the scene instead. */
-const LIFTOFF = { at: 0.66, depth: 15, height: 7.5 };
 
 const FACTS = [
   { value: "21 h 36 min", label: "on the Moon with a crew on board" },
@@ -177,7 +173,6 @@ const css = (c: Rgb) => `rgb(${c[0]} ${c[1]} ${c[2]})`;
 
 export function EagleStory() {
   const rootRef = useRef<HTMLElement>(null);
-  const liftoffRef = useRef<HTMLDivElement>(null);
   const lenis = useLenis();
   // What the 3D scene reads every frame. Written by the scroll handler below.
   const stage = useRef<StageState>({ p: 0, haze: CHAPTERS[0].light.haze, ground: CHAPTERS[0].light.ground, paper: CHAPTERS[0].light.haze });
@@ -303,10 +298,7 @@ export function EagleStory() {
           {/* The land and everything standing on it: one WebGL scene. */}
           {isMoving && (
             <div className="absolute inset-0">
-              <MoonScene stage={stage} cards={CARDS} follower={{ ref: liftoffRef, ...LIFTOFF }} />
-              <div ref={liftoffRef} className="absolute left-0 top-0 aspect-[5/4] h-[40svh] origin-top-left opacity-0 will-change-transform">
-                <HairlineEagle className="h-full" />
-              </div>
+              <MoonScene stage={stage} cards={CARDS} />
             </div>
           )}
 
@@ -315,7 +307,6 @@ export function EagleStory() {
             {CARDS.map((item) => (
               <Image key={item.key} src={item.src} alt={item.alt} width={item.width} height={item.pixelHeight} sizes="50vw" className="h-[30svh] w-auto" />
             ))}
-            <HairlineEagle className="h-[30svh]" />
           </div>
 
           {/* A wash of bare paper behind the poem, so the words never sit on painted ground. */}
