@@ -19,16 +19,20 @@ import bpy
 import numpy as np
 
 argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
+# --lite builds the phone model: the same ground on a grid twice as coarse, about a quarter of
+# the triangles. It shares the full model's height map, so it does not write one.
+LITE = "--lite" in argv
+argv = [a for a in argv if a != "--lite"]
 OUT = argv[0] if argv else "tranquility-base.glb"
 PREVIEW = argv[1] if len(argv) > 1 else None
 
 SEED = 1969
 X_MIN, X_MAX = -110.0, 110.0
 Y_MIN, Y_MAX = -6.0, 58.0
-STEP_X = 0.22
+STEP_X = 0.44 if LITE else 0.22
 # Rows are close together near the camera and spread out with distance, so the triangles go
 # where the eye can see them: crater walls up close stay smooth without a huge file.
-STEP_NEAR, STEP_FAR = 0.14, 0.75
+STEP_NEAR, STEP_FAR = (0.28, 1.5) if LITE else (0.14, 0.75)
 
 rng = np.random.default_rng(SEED)
 
@@ -214,7 +218,8 @@ import json
 lane_x = np.arange(X_MIN, X_MAX + 0.5, 1.0)
 lane_depth = np.arange(-6.0, 30.5, 1.0)
 lane = [[round(sample_height(float(x), float(y)), 2) for x in lane_x] for y in lane_depth]
-with open(OUT.rsplit(".", 1)[0] + ".heights.json", "w") as fh:
+if not LITE:
+  with open(OUT.rsplit(".", 1)[0] + ".heights.json", "w") as fh:
     json.dump({"x0": float(lane_x[0]), "z0": 6.0, "step": 1.0, "rows": lane}, fh, separators=(",", ":"))
 
 tris = len(ground.data.polygons) + len(rocks.data.polygons)
