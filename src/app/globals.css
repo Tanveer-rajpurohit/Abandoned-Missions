@@ -5,8 +5,8 @@
  * Core: raw palette values. Nothing in a component should use these directly.
  * Semantic: what a colour is for. Components bind to these only.
  *
- * The home page is off-white and near-black: the NASA photos carry all the colour.
- * Light is the default; dark is opted into with data-theme="dark" on <html>.
+ * Paper (cream and navy ink) is the default. data-theme="grape" on <html> swaps in lavender,
+ * and data-theme="dark" is the night version. All three share the same bright colours.
  * Mission story pages can later swap in their own land colours (Moon grey, Mars rust).
  */
 :root {
@@ -22,22 +22,49 @@
   --core-grey-dark: #5f5e59;
   --core-grey-light: #a3a19a;
 
-  /* semantic: light */
-  --surface: var(--core-white);
-  --surface-raised: var(--core-white-raised);
-  --surface-sunken: var(--core-white-sunken);
-  --border: var(--core-white-line);
-  --text: var(--core-black);
-  --text-muted: var(--core-grey-dark);
-  --accent: var(--core-black);
-  --accent-hover: #2b2b29;
-  --on-accent: var(--core-white);
-  --focus: var(--core-black);
+  /* The cut-paper palette: page, ink, three flat colours, and the ink used on top of those
+     colours (it stays dark in every theme, because the colours stay bright). */
+  --paper: #efece4;
+  --ink: #1b1f5e;
+  --pop-a: #ffd23f;
+  --pop-b: #ff5d5d;
+  --pop-c: #8ecae6;
+  --on-pop: #1b1f5e;
+
+  /* semantic: paper */
+  --surface: var(--paper);
+  --surface-raised: #f8f6f0;
+  --surface-sunken: #e4e0d5;
+  --border: #cdc9bd;
+  --text: var(--ink);
+  --text-muted: #4a4e85;
+  --accent: var(--ink);
+  --accent-hover: #2c3184;
+  --on-accent: var(--paper);
+  --focus: var(--ink);
 
   color-scheme: light;
 }
 
+:root[data-theme="grape"] {
+  --paper: #a9a4f7;
+  --ink: #1d1a4d;
+  --pop-a: #ffd166;
+  --pop-b: #19b8a6;
+  --pop-c: #ffc7a8;
+  --on-pop: #1d1a4d;
+
+  --surface-raised: #bcb8fa;
+  --surface-sunken: #9993ee;
+  --border: #7f79d8;
+  --text-muted: #36326e;
+  --accent-hover: #2e2a72;
+}
+
 :root[data-theme="dark"] {
+  /* Night keeps the same three colours as Paper; only page and ink trade places. */
+  --paper: var(--core-black);
+  --ink: #efece4;
   --surface: var(--core-black);
   --surface-raised: var(--core-black-raised);
   --surface-sunken: var(--core-black-sunken);

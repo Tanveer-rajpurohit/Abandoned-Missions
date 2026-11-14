@@ -58,15 +58,15 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f4f3ef" },
+    { media: "(prefers-color-scheme: light)", color: "#efece4" },
     { media: "(prefers-color-scheme: dark)", color: "#0d0d0c" },
   ],
   colorScheme: "light dark",
 };
 
-// Runs before first paint so a saved dark choice never flashes light. Storage can throw in
-// private windows; then the page simply stays light.
-const THEME_BOOT = `try{if(localStorage.getItem("${THEME_STORAGE_KEY}")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}`;
+// Runs before first paint so a saved grape or dark choice never flashes paper. Storage can throw in
+// private windows; then the page simply stays paper.
+const THEME_BOOT = `try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");if(t==="dark"||t==="grape")document.documentElement.dataset.theme=t}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
