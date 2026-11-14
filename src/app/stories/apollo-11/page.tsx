@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { EagleStory } from "@/components/story/EagleStory";
+import { VersionSwitcher } from "@/components/story/StoryChrome";
 
 export const metadata: Metadata = {
   title: "Eagle, the half that stayed on the Moon",
@@ -31,6 +32,7 @@ export default function EagleStoryPage() {
           </nav>
         </div>
       </header>
+      <VersionSwitcher current="/stories/apollo-11" />
       <main id="main">
         <EagleStory />
       </main>
