@@ -69,6 +69,34 @@
 }
 
 /*
+ * Story pages take the colour of the ground they stand on. Only the semantic layer changes, so
+ * every component keeps working. The Moon: the silver grey of lunar soil in sunlight.
+ */
+[data-world="moon"] {
+  --surface: #e4e3df;
+  --surface-raised: #f6f5f2;
+  --surface-sunken: #d6d5d0;
+  --border: #c4c3bd;
+  --text-muted: #55544f;
+  /* The scene's light. The story script changes these four as the chapters go by. */
+  --sky: #d6d5d0;
+  --haze: #f6f5f2;
+  --ground: #e4e3df;
+  --near: #c4c3bd;
+}
+:root[data-theme="dark"] [data-world="moon"] {
+  --surface: #131314;
+  --surface-raised: #232324;
+  --surface-sunken: #0a0a0b;
+  --border: #2e2e30;
+  --text-muted: #a3a19a;
+  --sky: #0a0a0b;
+  --haze: #2e2e30;
+  --ground: #232324;
+  --near: #131314;
+}
+
+/*
  * Text styles. Sizes and line heights sit on the Tailwind type scale.
  * Space Grotesk for everything readable; Commit Mono only for mission data.
  */
