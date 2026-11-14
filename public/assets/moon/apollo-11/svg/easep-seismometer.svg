@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 320" width="520" height="320" fill="none" stroke-linejoin="round" stroke-linecap="round">
+<defs><radialGradient id="s"><stop offset="0" stop-color="#1d1d22" stop-opacity=".42"/><stop offset="1" stop-color="#1d1d22" stop-opacity="0"/></radialGradient></defs>
+<ellipse cx="260" cy="292" rx="230" ry="14" fill="url(#s)"/>
+<g stroke="#35343a" stroke-width="2">
+<path d="M180 150 216 200M340 150 304 200" stroke-width="6" stroke="#8c8e8f"/>
+<path d="M40 150L170 90L180 186L50 246z" fill="#33558c"/>
+<path d="M480 150L350 90L340 186L470 246z" fill="#27436f"/>
+<path d="M170 212L350 212L376 290L144 290z" fill="#d6d5d0"/>
+<path d="M170 212L350 212L358 236L162 236z" fill="#ecebe6"/>
+<rect x="196" y="168" width="92" height="56" rx="6" fill="#f0ece3"/>
+<circle cx="324" cy="250" r="14" fill="#8f8d86"/>
+<path d="M260 168V60" stroke-width="6" stroke="#77787b"/>
+<rect x="249" y="18" width="22" height="62" rx="7" fill="#c4c2ba"/></g>
+<g stroke="#35343a" stroke-width="1.5"><path d="M72.5 135L82.5 231M105 120L115 216M137.5 105L147.5 201M45 198L175 138M447.5 135L437.5 231M415 120L405 216M382.5 105L372.5 201M475 198L345 138" stroke="#b9c9e6" stroke-width="1.5"/></g>
+</svg>
