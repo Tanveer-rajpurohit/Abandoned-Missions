@@ -235,8 +235,11 @@ void main() {
 }`;
 
 /*
- * A picture is first a blank paper cut-out that grows in, then colour is laid into it. Both
- * stages are driven by `uShown`, which only ever goes up. It holds still under the pointer.
+ * A picture painted in watercolour. It arrives in two washes driven by `uShown`, which only ever
+ * goes up: first a grey wash in which the darkest tones settle before the light ones, then colour
+ * laid in as blotches that pool darker at their edges. The finished picture keeps the look: soft
+ * detail, tones lifted a little toward the paper, a granulated grain, and a frayed outline where
+ * the paint ran out before the edge of the shape. It holds still under the pointer.
  */
 const CARD_FRAG = /* glsl */ `
 ${NOISE}
@@ -247,22 +250,54 @@ uniform vec3 uPaper;
 varying vec2 vUv;
 void main() {
   vec2 q = vUv * vec2(uAspect, 1.0);
-  vec4 c = texture2D(uMap, vUv);
+  vec2 wobble = (vec2(fbm(q * 7.0), fbm(q * 7.0 + 3.1)) - 0.5) * vec2(0.012 / uAspect, 0.012);
+  vec2 uv = clamp(vUv + wobble, 0.0, 1.0);
+  vec4 c = texture2D(uMap, uv);
 
-  float shapeAt = uShown * 2.4;
-  float shape = 1.0 - smoothstep(shapeAt - 0.1, shapeAt, fbm(q * 5.0) * 0.7 + vUv.y * 0.3);
-  float a = c.a * shape;
-  if (a < 0.004) discard;
+  // How much of the shape surrounds this point: low near the outline, where the edge frays.
+  vec2 o = vec2(0.02 / uAspect, 0.02);
+  float around = (texture2D(uMap, uv + vec2(o.x, 0.0)).a + texture2D(uMap, uv - vec2(o.x, 0.0)).a
+    + texture2D(uMap, uv + vec2(0.0, o.y)).a + texture2D(uMap, uv - vec2(0.0, o.y)).a) * 0.25;
+  float fray = fbm(q * 15.0 + 1.7);
+  float a = c.a * smoothstep(0.2, 0.42, around + (fray - 0.5) * 0.5);
 
+  // Pigment, built the way a watercolour is: a few flat washes of tone laid one over another,
+  // each with a ragged edge that dries a shade darker; colour taken from a much blurrier copy so
+  // it runs a little past the lines; then some of the photo's detail brushed back on top.
+  vec3 sharp = c.rgb / max(c.a, 0.004);
+  vec4 softTap = texture2D(uMap, uv, 2.0);
+  vec4 runTap = texture2D(uMap, uv, 4.5);
+  vec3 run = runTap.rgb / max(runTap.a, 0.004);
+  float tone = dot(softTap.rgb / max(softTap.a, 0.004), vec3(0.299, 0.587, 0.114));
+  vec3 hue = run / max(dot(run, vec3(0.299, 0.587, 0.114)), 0.04);
+  float layer = tone * 5.0 + (fbm(q * 6.0 + 5.0) - 0.5) * 0.9;
+  float edgeOfWash = fract(layer);
+  float flat_ = (floor(layer) + smoothstep(0.72, 1.0, edgeOfWash)) / 5.0;
+  vec3 washes = clamp(hue * flat_, 0.0, 1.0) * (1.0 - (1.0 - smoothstep(0.0, 0.16, edgeOfWash)) * 0.1);
+  vec3 pigment = mix(washes, sharp, 0.38);
+  float luma = dot(pigment, vec3(0.299, 0.587, 0.114));
+  pigment = mix(pigment, uPaper, 0.08) * (0.94 + 0.1 * noise(q * 110.0));
+  // In the lightest passages the paper is left bare in places, as in a real watercolour.
+  float bare = smoothstep(0.6, 0.68, fbm(q * 8.0 + 11.0)) * smoothstep(0.5, 0.85, luma);
+  pigment = mix(pigment, uPaper, bare * 0.85);
+  // Paint collects where a wash stops, so the outline is a shade darker.
+  pigment *= 1.0 - (1.0 - smoothstep(0.55, 0.9, around)) * 0.14;
+
+  // First wash: grey, darkest tones first, spreading up from the ground through the paper.
+  float washAt = uShown * 2.6;
+  float washField = luma * 0.45 + fbm(q * 4.0) * 0.5 + vUv.y * 0.12;
+  float wash = 1.0 - smoothstep(washAt - 0.14, washAt, washField + 0.08);
+  vec3 grey = mix(mix(vec3(luma), pigment, 0.18), uPaper, 0.3);
+
+  // Second wash: colour in blotches of two sizes, running into each other.
   float paintAt = max(uShown - 0.3, 0.0) / 0.7 * 1.5;
   float wet = fbm(q * 2.6 + 7.3) * 0.72 + fbm(q * 7.0 + 2.1) * 0.2 + 0.06;
   float paint = 1.0 - smoothstep(paintAt - 0.05, paintAt, wet);
   float pool = smoothstep(paintAt - 0.16, paintAt - 0.04, wet) * paint;
 
-  // Unpainted, the cut-out is a sheet of paper a shade off the page behind it, lit from above,
-  // so its outline can be read before any colour arrives.
-  vec3 sheet = uPaper * (0.86 + 0.1 * vUv.y) * (0.98 + 0.04 * noise(q * 90.0));
-  vec3 col = mix(sheet, c.rgb, paint) * (1.0 - pool * 0.2);
+  a *= wash;
+  if (a < 0.004) discard;
+  vec3 col = mix(grey, pigment, paint) * (1.0 - pool * 0.2);
   gl_FragColor = vec4(col, a);
 }`;
 
@@ -431,6 +466,9 @@ export function MoonScene({ stage, cards, follower }: { stage: RefObject<StageSt
         (texture) => {
           if (isDisposed) return texture.dispose();
           texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+          // Premultiplied, so the blurred mip levels the shader paints from do not pick up
+          // whatever colour hides under the transparent pixels around the cut-out.
+          texture.premultiplyAlpha = true;
           material.uniforms.uMap.value = texture;
           mesh.visible = true;
           disposables.push(texture);
