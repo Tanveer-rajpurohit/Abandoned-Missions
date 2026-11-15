@@ -22,7 +22,7 @@ function Word({ text, className }: { text: string; className: string }) {
       {[...text].map((ch, i) => (
         <span key={i} data-char className="inline-block">
           <span data-char-in className="inline-block opacity-0">
-            {ch}
+            {ch === " " ? " " : ch}
           </span>
         </span>
       ))}
@@ -104,10 +104,10 @@ export function Hero() {
     <section ref={sectionRef} aria-labelledby="hero-title" className="relative h-[200svh]">
       <div className="sticky top-0 h-svh overflow-hidden">
         <h1 id="hero-title" className="sr-only">
-          Abandoned Missions
+          Stories from Void
         </h1>
-        <Word text="Abandoned" className="left-4 top-[14%] sm:left-8 md:left-12 md:top-[13%]" />
-        <Word text="Missions" className="bottom-[16%] right-4 sm:right-8 md:bottom-[8%] md:right-12" />
+        <Word text="Stories" className="left-4 top-[14%] sm:left-8 md:left-12 md:top-[13%]" />
+        <Word text="from Void" className="bottom-[16%] right-4 sm:right-8 md:bottom-[8%] md:right-12" />
 
         <div className="absolute inset-0 z-10 grid place-items-center">
           <div data-card className="relative opacity-0 aspect-[3/2] w-[84vw] overflow-hidden bg-surface-sunken md:w-[36vw]">

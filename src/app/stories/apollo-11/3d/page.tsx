@@ -21,7 +21,7 @@ export default function EagleStoryPage() {
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link href="/" className="pointer-events-auto inline-flex min-h-11 items-center text-[1.0625rem] font-medium tracking-[-0.02em]">
-              Abandoned Missions
+              Stories from Void
             </Link>
           </div>
           <nav aria-label="Main" className="pointer-events-auto flex items-center gap-1 sm:gap-3">

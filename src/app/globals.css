@@ -5,8 +5,8 @@
  * Core: raw palette values. Nothing in a component should use these directly.
  * Semantic: what a colour is for. Components bind to these only.
  *
- * Paper (cream and navy ink) is the default. data-theme="grape" on <html> swaps in lavender,
- * and data-theme="dark" is the night version. All three share the same bright colours.
+ * Paper (cream and navy ink) is the default and data-theme="dark" on <html> is the night
+ * version. Both share the same bright colours.
  * Mission story pages can later swap in their own land colours (Moon grey, Mars rust).
  */
 :root {
@@ -44,21 +44,6 @@
   --focus: var(--ink);
 
   color-scheme: light;
-}
-
-:root[data-theme="grape"] {
-  --paper: #a9a4f7;
-  --ink: #1d1a4d;
-  --pop-a: #ffd166;
-  --pop-b: #19b8a6;
-  --pop-c: #ffc7a8;
-  --on-pop: #1d1a4d;
-
-  --surface-raised: #bcb8fa;
-  --surface-sunken: #9993ee;
-  --border: #7f79d8;
-  --text-muted: #36326e;
-  --accent-hover: #2e2a72;
 }
 
 :root[data-theme="dark"] {

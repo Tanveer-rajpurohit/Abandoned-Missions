@@ -5,6 +5,8 @@ export interface StoryImage {
   src: string;
   alt: string;
   credit: string;
+  /** Small grey line under the photo when it is not from this mission, or is a painting. */
+  note?: string;
 }
 
 export interface Beat {

@@ -20,7 +20,7 @@ const commitMono = localFont({
   display: "swap",
 });
 
-const SITE_NAME = "Abandoned Missions";
+const SITE_NAME = "Stories from Void";
 const SITE_DESCRIPTION =
   "The stories of the machines NASA left behind on the Moon, on Mars and in deep space, told by the machines themselves.";
 
@@ -64,9 +64,9 @@ export const viewport: Viewport = {
   colorScheme: "light dark",
 };
 
-// Runs before first paint so a saved grape or dark choice never flashes paper. Storage can throw in
+// Runs before first paint so a saved dark choice never flashes paper. Storage can throw in
 // private windows; then the page simply stays paper.
-const THEME_BOOT = `try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");if(t==="dark"||t==="grape")document.documentElement.dataset.theme=t}catch(e){}`;
+const THEME_BOOT = `try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");if(t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
