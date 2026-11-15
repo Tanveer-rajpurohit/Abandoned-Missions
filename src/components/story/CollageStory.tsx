@@ -290,13 +290,19 @@ export function CollageStory({ story }: { story: Story }) {
               <div>
                 <p className="text-eyebrow">The end, for now</p>
                 <p className={`${display.className} mt-4 max-w-[16ch] text-balance text-[clamp(2rem,4.2vw,3.75rem)] font-extrabold leading-[0.95] tracking-[-0.035em]`}>{story.ending}</p>
-                <Link
-                  href="/#stories"
-                  className="mt-8 inline-flex min-h-12 items-center gap-3 rounded-full bg-[var(--on-pop)] px-6 font-medium text-white transition-colors duration-150 hover:bg-[var(--pop-b)] hover:text-[var(--on-pop)] active:scale-[0.98]"
-                >
-                  Meet the other machines
-                  <span aria-hidden="true">→</span>
-                </Link>
+                <div className="mt-8 flex flex-wrap items-center gap-4">
+                  <Link
+                    href="/#stories"
+                    className="inline-flex min-h-12 items-center gap-3 rounded-full bg-[var(--on-pop)] px-6 font-medium text-white transition-colors duration-150 hover:bg-[var(--pop-b)] hover:text-[var(--on-pop)] active:scale-[0.98]"
+                  >
+                    Meet the other machines
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                  {/* A sticker like JUMP, in the panel's own dark ink so it holds in both themes. */}
+                  <Link href="/quiz" className="inline-flex min-h-12 items-center gap-2 rounded-full border-2 border-[var(--on-pop)] bg-[var(--pop-c)] px-5 text-[0.9375rem] font-semibold text-[var(--on-pop)] shadow-[4px_4px_0_var(--on-pop)] transition-[translate,box-shadow] duration-100 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_var(--on-pop)] active:translate-x-1 active:translate-y-1 active:shadow-none">
+                    Take the quiz
+                  </Link>
+                </div>
               </div>
               <Sources sources={story.sources} />
             </div>
