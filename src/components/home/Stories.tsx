@@ -70,7 +70,7 @@ export function Stories() {
       <header data-head className="px-4 pb-16 pt-20 sm:px-8 md:px-12 md:pb-20 md:pt-28">
         <p className="flex items-baseline gap-4 text-eyebrow text-text-muted">
           <span className="text-text">(02)</span>
-          Eleven machines
+          Ten machines
         </p>
         <h2 id="stories-title" className="mt-8 max-w-4xl text-h1 text-text md:text-display">
           The stories
