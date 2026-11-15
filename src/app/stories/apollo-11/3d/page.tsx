@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { EagleStory } from "@/components/story/EagleStory";
 
 export const metadata: Metadata = {
@@ -11,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function EagleStoryPage() {
   return (
-    <div data-world="moon" className="min-h-full bg-surface">
+    <div data-world="moon" className="min-h-full bg-surface text-text">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-accent focus:px-4 focus:py-2 focus:text-caption focus:text-on-accent"
@@ -21,10 +20,7 @@ export default function EagleStoryPage() {
       <header className="pointer-events-none fixed inset-x-0 top-0 z-50 px-4 pt-3 text-white mix-blend-difference sm:px-8 md:px-12 md:pt-5">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Link href="/stories/apollo-11" className="pointer-events-auto inline-flex min-h-11 items-center gap-2 rounded-full border border-current px-4 text-[0.9375rem] font-medium active:scale-[0.97]">
-              <span aria-hidden="true">←</span> Back
-            </Link>
-            <Link href="/" className="pointer-events-auto hidden sm:inline-flex min-h-11 items-center text-[1.0625rem] font-medium tracking-[-0.02em]">
+            <Link href="/" className="pointer-events-auto inline-flex min-h-11 items-center text-[1.0625rem] font-medium tracking-[-0.02em]">
               Abandoned Missions
             </Link>
           </div>
@@ -32,7 +28,6 @@ export default function EagleStoryPage() {
             <Link href="/#stories" className="hidden min-h-11 items-center px-2 text-[0.9375rem] underline-offset-4 hover:underline sm:inline-flex">
               All machines
             </Link>
-            <ThemeToggle />
           </nav>
         </div>
       </header>
