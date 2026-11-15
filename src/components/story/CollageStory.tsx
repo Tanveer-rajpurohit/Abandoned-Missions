@@ -289,14 +289,20 @@ export function CollageStory({ story }: { story: Story }) {
             <div className="grid w-full gap-8 rounded-[1.25rem] border-2 border-[var(--ink)] bg-[var(--pop-a)] p-8 text-[var(--on-pop)] md:grid-cols-2 md:p-14">
               <div>
                 <p className="text-eyebrow">The end, for now</p>
-                <p className={`${display.className} mt-4 max-w-[16ch] text-balance text-[clamp(2rem,4.2vw,3.75rem)] font-extrabold leading-[0.95] tracking-[-0.035em]`}>{story.ending}</p>
-                <Link
-                  href="/#stories"
-                  className="mt-8 inline-flex min-h-12 items-center gap-3 rounded-full bg-[var(--on-pop)] px-6 font-medium text-white transition-colors duration-150 hover:bg-[var(--pop-b)] hover:text-[var(--on-pop)] active:scale-[0.98]"
-                >
-                  Meet the other machines
-                  <span aria-hidden="true">→</span>
-                </Link>
+                <p className={`${display.className} mt-3 max-w-[16ch] text-balance text-[clamp(1.5rem,min(7vw,4svh),2rem)] md:mt-4 md:text-[clamp(2rem,4.2vw,3.75rem)] font-extrabold leading-[0.95] tracking-[-0.035em]`}>{story.ending}</p>
+                <div className="mt-6 flex flex-wrap items-center gap-3 md:mt-8 md:gap-4">
+                  <Link
+                    href="/#stories"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--on-pop)] px-4 text-sm font-medium md:min-h-12 md:gap-3 md:px-6 md:text-base text-white transition-colors duration-150 hover:bg-[var(--pop-b)] hover:text-[var(--on-pop)] active:scale-[0.98]"
+                  >
+                    Meet the other machines
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                  {/* A sticker like JUMP, in the panel's own dark ink so it holds in both themes. */}
+                  <Link href="/quiz" className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-[var(--on-pop)] bg-[var(--pop-c)] px-4 text-sm md:min-h-12 md:px-5 md:text-[0.9375rem] font-semibold text-[var(--on-pop)] shadow-[4px_4px_0_var(--on-pop)] transition-[translate,box-shadow] duration-100 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_var(--on-pop)] active:translate-x-1 active:translate-y-1 active:shadow-none">
+                    Take the quiz
+                  </Link>
+                </div>
               </div>
               <Sources sources={story.sources} />
             </div>

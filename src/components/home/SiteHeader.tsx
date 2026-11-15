@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ThemePicker } from "@/components/ThemeToggle";
 
 const LINKS = [
@@ -27,6 +28,12 @@ export function SiteHeader() {
                 {l.label}
               </a>
             ))}
+            <Link
+              href="/quiz"
+              className="ml-1 inline-flex min-h-10 items-center rounded-full border-2 border-[var(--ink)] bg-[var(--pop-a)] px-4 text-[0.9375rem] font-semibold text-[var(--on-pop)] shadow-[3px_3px_0_var(--ink)] transition-[translate,box-shadow] duration-100 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_var(--ink)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+            >
+              Take the quiz
+            </Link>
           </nav>
         </div>
       </header>
