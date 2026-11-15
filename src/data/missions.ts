@@ -207,24 +207,6 @@ export const missions: Mission[] = [
       credit: "PIA00563",
     },
   },
-  {
-    slug: "insight",
-    name: "InSight",
-    craft: "Mars lander",
-    platform: "mars",
-    place: "Elysium Planitia",
-    coords: "4.50° N · 135.62° E",
-    arrived: { label: "Landed", date: "26 Nov 2018" },
-    lastSignal: { label: "Last signal", date: "15 Dec 2022" },
-    stat: { value: "1,300+", label: "marsquakes detected" },
-    voice: "I did not drive anywhere. I stayed still and listened.",
-    body: "InSight set a seismometer on the ground and listened to Mars shake for four years, showing scientists what the planet is like deep inside. Dust slowly covered its solar panels until it could no longer call home. Ten years earlier another lander, Phoenix, had dug up water ice near the north pole before the winter dark ended its mission.",
-    image: {
-      src: "/images/stories/insight/cover.jpg",
-      alt: "Self-portrait of the InSight lander on Mars with its two round solar panels open",
-      credit: "PIA22876",
-    },
-  },
 ];
 
 /** Apollo 11 touchdown, from NSSDCA: 20:17:40 UT on 20 July 1969. */
