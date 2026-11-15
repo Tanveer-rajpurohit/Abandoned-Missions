@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import gsap from "gsap";
@@ -166,8 +166,9 @@ export function CollageStory({ story }: { story: Story }) {
       <h1 className="sr-only">{`${story.title}: ${story.subtitle}`}</h1>
 
       <div data-loader aria-hidden="true" className="fixed inset-0 z-[110] overflow-hidden bg-[#0d0d0c] text-white motion-reduce:hidden">
-        {[story.cover, ...story.beats.map((b) => b.image)].reverse().map((image) => (
-          <Image key={image.src} data-flash src={image.src} alt="" fill priority sizes="100vw" className="invisible object-cover" />
+        {/* Each photo once, even when a story shows it in more than one panel. */}
+        {[...new Set([story.cover, ...story.beats.map((b) => b.image)].map((image) => image.src))].reverse().map((src) => (
+          <Image key={src} data-flash src={src} alt="" fill priority sizes="100vw" className="invisible object-cover" />
         ))}
         <p className={`${display.className} absolute bottom-6 left-6 flex items-baseline gap-2 text-[clamp(3rem,8vw,6.5rem)] font-light leading-none tracking-[-0.04em] tabular-nums md:bottom-10 md:left-12`}>
           <span data-count>000</span>
@@ -203,14 +204,20 @@ export function CollageStory({ story }: { story: Story }) {
           </Link>
         </div>
 
-        <div data-track className="relative flex h-full w-max will-change-transform motion-reduce:h-auto motion-reduce:w-full motion-reduce:flex-col">
+        <div data-track className="relative flex h-full w-max md:gap-[8vw] will-change-transform motion-reduce:h-auto motion-reduce:w-full motion-reduce:flex-col">
           {/* Cover */}
-          <section className="relative grid h-full w-screen shrink-0 content-center gap-8 px-6 pb-36 pt-24 md:grid-cols-[1.2fr_1fr] md:items-center md:gap-12 md:px-16 motion-reduce:h-auto">
-            <div>
+          <section className="relative grid h-full w-screen shrink-0 gap-8 px-6 pb-36 pt-24 [align-content:safe_center] md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:items-center md:gap-12 md:px-16 motion-reduce:h-auto">
+            <div className="min-w-0">
               <p data-in className="text-eyebrow">
                 {story.eyebrow}
               </p>
-              <p data-in aria-hidden="true" className={`${display.className} mt-4 text-[clamp(5.5rem,20vw,18rem)] font-extrabold leading-[0.8] tracking-[-0.05em]`}>
+              {/* Sized from the title's length so long names stay on one line inside their column. */}
+              <p
+                data-in
+                aria-hidden="true"
+                style={{ "--fit": Math.max(story.title.length, 5) * 0.6 } as CSSProperties}
+                className={`${display.className} mt-4 whitespace-nowrap pb-[0.1em] text-[min(7rem,calc((100vw-3rem)/var(--fit)))] font-extrabold leading-[0.9] tracking-[-0.05em] md:text-[min(18rem,26svh,calc((100vw-11rem)*0.54/var(--fit)))]`}
+              >
                 {story.title}
               </p>
               <p data-in className={`${display.className} mt-6 max-w-[18ch] text-[clamp(1.5rem,2.8vw,2.5rem)] font-medium leading-[1.05] tracking-[-0.02em]`}>
@@ -231,9 +238,9 @@ export function CollageStory({ story }: { story: Story }) {
             <section
               key={beat.id}
               aria-labelledby={`collage-${beat.id}`}
-              className="relative grid h-full w-screen shrink-0 content-center gap-6 px-6 pb-36 pt-20 md:w-[92vw] md:grid-cols-2 md:items-center md:gap-16 md:px-16 md:pb-40 lg:w-[80vw] motion-reduce:h-auto motion-reduce:w-full"
+              className="relative grid h-full w-screen shrink-0 gap-6 px-6 pb-36 pt-20 [align-content:safe_center] md:w-[92vw] md:grid-cols-2 md:items-center md:gap-16 md:px-16 md:pb-40 lg:w-[80vw] motion-reduce:h-auto motion-reduce:w-full"
             >
-              <div className={`relative mx-auto w-[min(28svh,60vw)] md:w-[min(54svh,32vw)] ${FRAMES[i % FRAMES.length]} ${i % 2 ? "md:order-2" : ""}`}>
+              <div className={`relative mx-auto w-[min(19svh,52vw)] md:w-[min(46svh,32vw)] ${FRAMES[i % FRAMES.length]} ${i % 2 ? "md:order-2" : ""}`}>
                 <div data-drift="0.05" className={`absolute -bottom-4 top-4 rounded-[1.25rem] border-2 border-[var(--ink)] ${i % 2 ? "-left-4 right-4" : "-right-4 left-4"}`} style={{ background: BLOCKS[i % 3] }} />
                 <div data-reveal className="absolute inset-0 overflow-hidden rounded-[1.25rem] border-2 border-[var(--ink)] bg-[var(--ink)]">
                   <Image src={beat.image.src} alt={beat.image.alt} fill sizes="(min-width: 768px) 32vw, 60vw" className="scale-[calc(1.3-0.3*var(--t,1))] object-cover" />
@@ -252,15 +259,15 @@ export function CollageStory({ story }: { story: Story }) {
                   <span aria-hidden="true" className="h-px w-8 bg-current" />
                   {beat.when}
                 </p>
-                <h2 id={`collage-${beat.id}`} className={`${display.className} mt-3 max-w-[11ch] text-balance text-[clamp(2.25rem,5.2vw,5rem)] font-extrabold leading-[0.92] tracking-[-0.035em]`}>
+                <h2 id={`collage-${beat.id}`} className={`${display.className} mt-3 max-w-[11ch] text-balance text-[clamp(2rem,min(5.2vw,8svh),5rem)] font-extrabold leading-[0.92] tracking-[-0.035em]`}>
                   {beat.title}
                 </h2>
-                <div className="mt-5 flex max-w-[36ch] flex-col gap-3 text-[1.0625rem] leading-[1.55] md:text-[1.1875rem]">
+                <div className="mt-4 flex max-w-[38ch] flex-col gap-3 text-[1rem] leading-[1.5] md:mt-5 md:text-[1.125rem] md:leading-[1.55]">
                   {beat.lines.map((line) => (
                     <p key={line}>{line}</p>
                   ))}
                 </div>
-                <p className="mt-4 text-data-sm opacity-60">Photo: NASA {beat.image.credit}</p>
+                <p className="mt-4 text-data-sm opacity-60 max-md:[@media(max-height:760px)]:hidden">Photo: NASA {beat.image.credit}</p>
               </div>
 
               {/* This moment's stop on the timeline. */}
