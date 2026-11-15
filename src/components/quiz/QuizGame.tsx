@@ -32,7 +32,7 @@ const STORY_LINKS = [...new Map(QUIZ.map((q) => [q.story.slug, q.story.title])).
 const INTRO_PHOTOS = [
   { src: "/images/stories/surveyor-3.jpg", alt: "Surveyor 3 on the Moon, with the Apollo 12 lunar module in the distance" },
   { src: "/images/stories/falcon.jpg", alt: "Jim Irwin beside the lunar rover, with Mount Hadley behind" },
-  { src: "/images/stories/sojourner.jpg", alt: "The Sojourner rover among rocks on Mars" },
+  { src: "/images/stories/opportunity/selfie.jpg", alt: "Self-portrait of the Opportunity rover on Mars" },
 ];
 
 const pad = (n: number) => String(n).padStart(2, "0");
