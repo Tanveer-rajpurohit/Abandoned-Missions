@@ -25,7 +25,7 @@ export default function EagleStoryPage() {
               <span aria-hidden="true">←</span> Back
             </Link>
             <Link href="/" className="pointer-events-auto hidden sm:inline-flex min-h-11 items-center text-[1.0625rem] font-medium tracking-[-0.02em]">
-              Abandoned Missions
+              Stories from Void
             </Link>
           </div>
           <nav aria-label="Main" className="pointer-events-auto flex items-center gap-1 sm:gap-3">

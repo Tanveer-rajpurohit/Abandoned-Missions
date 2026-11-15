@@ -11,7 +11,7 @@ import { EagleClock } from "./EagleClock";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-const WORDMARK = "Abandoned Missions";
+const WORDMARK = "Stories from Void";
 const PLATFORMS: Platform[] = ["moon", "mars", "deep-space"];
 
 const COLUMNS = [

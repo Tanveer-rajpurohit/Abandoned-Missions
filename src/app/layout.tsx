@@ -20,7 +20,7 @@ const commitMono = localFont({
   display: "swap",
 });
 
-const SITE_NAME = "Abandoned Missions";
+const SITE_NAME = "Stories from Void";
 const SITE_DESCRIPTION =
   "The stories of the machines NASA left behind on the Moon, on Mars and in deep space, told by the machines themselves.";
 
