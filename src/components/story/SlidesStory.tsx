@@ -52,6 +52,12 @@ const toSlides = (story: Story) => [
 function VoicePicker({ voices, current, onPick }: { voices: SpeechSynthesisVoice[]; current: SpeechSynthesisVoice | undefined; onPick: (voiceURI: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const groups = useMemo(() => groupByLanguage(voices), [voices]);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // The list is short but scrolls on small screens; open it on the voice in use.
+  useEffect(() => {
+    if (isOpen) listRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest" });
+  }, [isOpen]);
   return (
     <div className="relative mt-2" onKeyDown={(event) => event.key === "Escape" && isOpen && (event.stopPropagation(), setIsOpen(false))}>
       <button
@@ -67,7 +73,7 @@ function VoicePicker({ voices, current, onPick }: { voices: SpeechSynthesisVoice
         </svg>
       </button>
       {isOpen && (
-        <div role="listbox" aria-label="Narrator voice" className="absolute inset-x-0 bottom-full z-10 mb-2 max-h-[min(15rem,40svh)] overflow-y-auto rounded-xl border-2 border-[var(--ink)] bg-[var(--paper)] p-1 shadow-[4px_4px_0_var(--ink)]">
+        <div ref={listRef} role="listbox" aria-label="Narrator voice" className="absolute inset-x-0 bottom-full z-10 mb-2 max-h-[min(15rem,40svh)] overflow-y-auto rounded-xl border-2 border-[var(--ink)] bg-[var(--paper)] p-1 shadow-[4px_4px_0_var(--ink)]">
           {groups.map((group) => (
             <div key={group.code} role="group" aria-label={group.name}>
               <p className="px-3 pb-1 pt-2 text-eyebrow opacity-70">{group.name}</p>

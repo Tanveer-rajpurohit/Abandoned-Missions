@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 const VOICE_KEY = "am-narrator-voice";
 const RATE_KEY = "am-narrator-speed";
@@ -70,6 +70,9 @@ const getVoices = () => {
 const subscribeNothing = () => () => {};
 const getSupport = () => "speechSynthesis" in window;
 
+/** The voices offered when this device has them; the default and the saved choice are always listed too. */
+const SHORTLIST = /(george|david|hazel)/i;
+
 /** Prefers the neural voices (Edge "Natural", Apple Premium and Enhanced), then warm English ones. */
 const voiceScore = (voice: SpeechSynthesisVoice): number => {
   let score = 0;
@@ -82,8 +85,8 @@ const voiceScore = (voice: SpeechSynthesisVoice): number => {
   return score;
 };
 
-/** The voice a first-time visitor hears: the best-sounding English voice this device has. */
-const pickDefault = (voices: SpeechSynthesisVoice[]) => voices.reduce<SpeechSynthesisVoice | undefined>((best, voice) => (!best || voiceScore(voice) > voiceScore(best) ? voice : best), undefined);
+/** The voice a first-time visitor hears: George where the device has him, else its best-sounding English voice. */
+const pickDefault = (voices: SpeechSynthesisVoice[]) => voices.find((voice) => /george/i.test(voice.name)) ?? voices.reduce<SpeechSynthesisVoice | undefined>((best, voice) => (!best || voiceScore(voice) > voiceScore(best) ? voice : best), undefined);
 
 interface SpeakOptions {
   /** 0 to 1 through the card. */
@@ -104,6 +107,11 @@ export function useNarrator() {
   const [rate, setRateState] = useState<number>(() => RATES.find((option) => option.value === Number(readStored(RATE_KEY)))?.value ?? DEFAULT_RATE);
 
   const voice = voices.find((option) => option.voiceURI === savedUri) ?? pickDefault(voices);
+  const choices = useMemo(() => {
+    const shortlisted = voices.filter((option) => option === voice || SHORTLIST.test(option.name));
+    // A phone or Mac has none of these names, so it lists everything it has.
+    return shortlisted.length > 1 ? shortlisted : voices;
+  }, [voices, voice]);
   const timers = useRef<{ start?: number; watch?: number }>({});
   // Bumped by stop(), so a card that was cancelled can never report that it finished.
   const generation = useRef(0);
@@ -181,5 +189,5 @@ export function useNarrator() {
     writeStored(RATE_KEY, String(value));
   }, []);
 
-  return { isSupported, voices, voice, setVoice, rate, setRate, speak, stop };
+  return { isSupported, voices: choices, voice, setVoice, rate, setRate, speak, stop };
 }
