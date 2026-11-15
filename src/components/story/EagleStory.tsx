@@ -123,6 +123,9 @@ const FACTS = [
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 /** Longest the loading screen waits before letting the reader in anyway. */
 const LOAD_TIMEOUT_MS = 15000;
+/** The loading ring creeps toward this on time alone, about two thirds of the way per LOAD_CREEP_MS. */
+const LOAD_CREEP_MAX = 0.9;
+const LOAD_CREEP_MS = 2500;
 const smoothstep = (from: number, to: number, n: number) => {
   const t = clamp01((n - from) / (to - from));
   return t * t * (3 - 2 * t);
@@ -178,11 +181,15 @@ export function EagleStory() {
   useEffect(() => {
     if (!isMoving || isReady) return;
     let shown = 0;
-    let last = performance.now();
+    const start = performance.now();
+    let last = start;
     let frame = requestAnimationFrame(function tick(now) {
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      const target = loadTarget.current;
+      // Files report progress in bursts, with long quiet gaps while they parse. A slow creep
+      // toward 90% keeps the ring moving through those gaps; only the real finish takes it to 100.
+      const creep = LOAD_CREEP_MAX * (1 - Math.exp(-(now - start) / LOAD_CREEP_MS));
+      const target = loadTarget.current >= 1 ? 1 : Math.max(loadTarget.current, creep);
       // Eases toward what has loaded, never slower than a steady 25% a second, so it always lands.
       shown = Math.min(target, shown + Math.max((target - shown) * (1 - Math.exp(-dt * 5)), dt * 0.25));
       // pathLength is 1, so the dash offset is simply what is left to load.
