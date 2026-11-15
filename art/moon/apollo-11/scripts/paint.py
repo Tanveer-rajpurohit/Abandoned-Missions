@@ -1,6 +1,6 @@
 """Repaints the NASA photo cut-outs as watercolours on white paper, for the 3D story scene.
 
-Each cut-out in ../real becomes a picture in ../painted: the photo's shapes and colours, but
+Each cut-out in ../real becomes a picture in public/assets/moon/apollo-11/painted: the photo's shapes and colours, but
 simplified into flat washes the way a painter would lay them, with pigment pooling at the edge
 of each wash, the grain of the paper showing through, a few dry-brush lines for the fine detail,
 and a ragged margin of bare white paper left around the paint.
@@ -205,7 +205,8 @@ def paint(name, out_dir, preview):
 
 def main():
     args = sys.argv[1:]
-    out_dir = HERE.parent / "painted"
+    # The finished paintings are what the site serves, so they go straight into public/.
+    out_dir = HERE.parents[3] / "public" / "assets" / "moon" / "apollo-11" / "painted"
     if "--out" in args:
         i = args.index("--out")
         out_dir = Path(args[i + 1])

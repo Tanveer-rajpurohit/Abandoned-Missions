@@ -10,160 +10,108 @@ import { useLenis } from "lenis/react";
 import { ArrowRightIcon } from "@/components/icons";
 import { PillLink } from "@/components/PillLink";
 import { EagleClock } from "@/components/home/EagleClock";
-import type { Card, Rgb, StageState } from "./MoonScene";
+import type { Card, StageState } from "./MoonScene";
 
 // three.js and the 6 MB terrain stay out of the first load and never run on the server.
 const MoonScene = dynamic(() => import("./MoonScene").then((m) => m.MoonScene), { ssr: false });
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-/** NASA photos repainted as watercolours by public/assets/moon/apollo-11/scripts/paint.py. */
+/** NASA photos and drawings repainted as watercolours by art/moon/apollo-11/scripts/paint.py. */
 const PAINTINGS = "/assets/moon/apollo-11/painted";
+const PHOTOS = "/assets/moon/apollo-11/real";
 
-interface Palette {
-  sky: Rgb;
-  haze: Rgb;
-  ground: Rgb;
-  near: Rgb;
-}
-
-const hex = (value: string): Rgb => {
-  const n = parseInt(value.slice(1), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-};
-const palette = (sky: string, haze: string, ground: string, near: string): Palette => ({
-  sky: hex(sky),
-  haze: hex(haze),
-  ground: hex(ground),
-  near: hex(near),
-});
+type Side = "left" | "right";
+const SIDE_VALUE: Record<Side, number> = { left: -1, right: 1 };
 
 /**
- * Each chapter starts at scroll progress `at` and has its own light on the scene: the sky, the
- * bright haze at the horizon, the lit ground and the ground nearest the viewer. The first pair
- * matches the Moon tokens in globals.css, so nothing jumps when the script takes over.
+ * The story in chapters of short paragraphs. A chapter's words take one side of the screen and
+ * the camera frames the subject on the other, so the story moves across the screen instead of
+ * running down one column. Its paragraphs follow each other in the same place.
  */
-const CHAPTERS = [
+const STORY: { title: string; when: string; side: Side; paragraphs: string[][] }[] = [
   {
     title: "Landing",
-    at: 0,
     when: "20 July 1969 · 20:17 UTC",
-    light: palette("#d6d5d0", "#f6f5f2", "#e4e3df", "#c4c3bd"),
-    dark: palette("#0a0a0b", "#2e2e30", "#232324", "#131314"),
-    lines: [
-      "I am Eagle.",
-      "I carried two astronauts",
-      "down to the Moon.",
-      "The ground was full of boulders,",
-      "so Neil Armstrong",
-      "steered me by hand.",
-      "We touched down with less than",
-      "30 seconds of landing fuel left.",
+    side: "left",
+    paragraphs: [
+      ["I am Eagle.", "I carried two astronauts", "down to the Moon.", "The ground was full of boulders,", "so Neil Armstrong", "steered me by hand.", "We touched down with less than", "30 seconds of landing fuel left."],
+      ["Back on Earth,", "Mission Control held its breath.", "Then Neil spoke:", "\u201cHouston, Tranquility Base here.", "The Eagle has landed.\u201d", "We had come down", "on the Sea of Tranquility,", "a wide, flat plain", "of old, dark lava."],
     ],
   },
   {
     title: "First steps",
-    at: 0.2,
     when: "21 July 1969 · 02:56 UTC",
-    light: palette("#ccd3d8", "#eef1f2", "#dfe4e6", "#bcc5ca"),
-    dark: palette("#080b0e", "#263038", "#1c252b", "#0f1519"),
-    lines: [
-      "Six and a half hours later,",
-      "Neil climbed down my ladder.",
-      "Buzz Aldrin followed him out.",
-      "Their boots pressed into dust",
-      "that had not moved",
-      "for billions of years.",
-      "There is no wind here, and no rain.",
-      "Those prints are still here.",
+    side: "right",
+    paragraphs: [
+      ["Six and a half hours later,", "Neil climbed down my ladder.", "Buzz Aldrin followed him out.", "Their boots pressed into dust", "that had not moved", "for billions of years."],
+      ["As his boot touched the ground,", "Neil said:", "\u201cThat\u2019s one small step for man,", "one giant leap for mankind.\u201d", "Around 600 million people", "watched it on television.", "There is no wind here, and no rain.", "Those prints are still here."],
     ],
   },
   {
     title: "Experiments",
-    at: 0.4,
     when: "2 hours 31 minutes outside",
-    light: palette("#dcd4c2", "#f6f0e3", "#eae3d3", "#cbc0a9"),
-    dark: palette("#0e0b07", "#3a301f", "#2a2317", "#16120b"),
-    lines: [
-      "They did not have long.",
-      "They planted a flag.",
-      "They set up a seismometer",
-      "to listen for moonquakes,",
-      "and a mirror that bounces",
-      "laser light back to Earth.",
-      "Then they packed 21.5 kg",
-      "of Moon rock to take home.",
+    side: "left",
+    paragraphs: [
+      ["They did not have long.", "They planted a flag.", "They set up a seismometer", "to listen for moonquakes,", "and a mirror that bounces", "laser light back to Earth."],
+      ["Walking was strange.", "The Moon pulls six times", "more gently than Earth,", "so they bounced and hopped.", "Then they packed 21.5 kg", "of Moon rock to take home."],
     ],
   },
   {
     title: "Liftoff",
-    at: 0.62,
     when: "21 July 1969 · 17:54 UTC",
-    light: palette("#dccbc3", "#f7ece6", "#ecddd5", "#cbb5ab"),
-    dark: palette("#100a08", "#3c2923", "#2c1e1a", "#170f0c"),
-    lines: [
-      "After 21 hours and 36 minutes,",
-      "it was time to leave.",
-      "But only my top half could fly.",
-      "It fired its engine and used me,",
-      "the bottom half,",
-      "as its launch pad.",
-      "The blast knocked the flag over.",
-      "Then it was quiet.",
+    side: "right",
+    paragraphs: [
+      ["After 21 hours and 36 minutes,", "it was time to leave.", "But only my top half could fly.", "It fired its engine and used me,", "the bottom half,", "as its launch pad.", "The blast knocked the flag over."],
+      ["High above, Michael Collins", "had circled the Moon alone", "in Columbia, their ship home.", "My top half met him there,", "and the three flew back to Earth.", "They splashed down in the Pacific", "on 24 July 1969."],
     ],
   },
   {
     title: "Today",
-    at: 0.82,
     when: "Today",
-    light: palette("#bac5d2", "#e4eaef", "#d5dde5", "#a8b5c3"),
-    dark: palette("#060a11", "#1f2f44", "#182433", "#0b111b"),
-    lines: [
-      "The seismometer went silent",
-      "that August.",
-      "The mirror needs no power,",
-      "so it never stopped working.",
-      "Scientists still fire lasers at it.",
-      "That is how we know the Moon drifts",
-      "3.8 cm farther away every year.",
-      "And I am still standing here.",
+    side: "left",
+    paragraphs: [
+      ["The seismometer went silent", "that August.", "The mirror needs no power,", "so it never stopped working.", "Lasers from Earth still find it."],
+      ["Nobody has been back since.", "Cameras circling the Moon", "have photographed me", "from far above,", "with the astronauts\u2019 trails", "still printed beside me.", "And I am still standing here."],
     ],
   },
 ];
 
+/** Every paragraph in reading order, each with an equal share of the scroll. */
+const BEATS = STORY.flatMap((chapter, chapterIndex) => chapter.paragraphs.map((lines, paragraph) => ({ chapter, chapterIndex, paragraph, lines })));
+/** Each chapter starts at the scroll progress of its first paragraph. */
+const CHAPTERS = STORY.map((chapter) => ({ ...chapter, at: BEATS.findIndex((beat) => beat.chapter === chapter) / BEATS.length }));
+/** Scroll distance per paragraph, in screen heights. Long enough to read without hurrying. */
+const BEAT_SCREENS = 1.6;
+
 /**
  * Pictures standing in the 3D scene. `at` is the story progress (0 to 1) at which the camera
  * reaches the picture, `depth` how many metres back from the camera lane it stands and `height`
- * its real size in metres, so near things pass faster and larger than far ones.
+ * its real size in metres, so near things pass faster and larger than far ones. Only things that
+ * stand up are here: pictures of the ground itself never matched the modelled soil around them.
  */
 interface StoryCard extends Card {
   alt: string;
   width: number;
-  height: number;
+  pixelHeight: number;
 }
-const card = (key: string, src: string, alt: string, width: number, pixelHeight: number, at: number, depth: number, metres: number, extra: Partial<Card> = {}): StoryCard & { pixelHeight: number } => ({
+const card = (key: string, src: string, alt: string, width: number, pixelHeight: number, at: number, depth: number, metres: number, extra: Partial<Card> = {}): StoryCard => ({
   key, src, alt, width, pixelHeight, at, depth, height: metres, aspect: width / pixelHeight, ...extra,
 });
 
 const CARDS = [
-  // Eagle and the flag each stand on a separate patch of ground that lies flat under them.
-  card("eagle-ground", `${PAINTINGS}/eagle-ground.webp`, "", 1327, 469, 0.03, 17.3, 3.4, { lean: 68 }),
   card("eagle", `${PAINTINGS}/eagle-lander.webp`, "Watercolour of the lunar module Eagle standing on the Moon, with Buzz Aldrin unloading experiments beside it", 1593, 1431, 0.03, 19, 6.7, { dab: [0.62, 0.7] }),
   card("aldrin", `${PAINTINGS}/aldrin.webp`, "Watercolour of Buzz Aldrin standing on the Moon in his spacesuit, facing us, the lander reflected in his gold visor", 714, 1360, 0.2, 10, 2.2, { dab: [0.45, 0.8] }),
-  card("bootprint", `${PAINTINGS}/bootprint.webp`, "Watercolour of a single bootprint pressed into the grey lunar soil", 994, 1081, 0.255, 5.5, 1.35, { lean: 58 }),
-  card("bootprints", `${PAINTINGS}/bootprints.webp`, "Painting of a trail of bootprints leading away across the dust", 236, 797, 0.3, 7, 2.6, { lean: 70 }),
-  card("flag-ground", `${PAINTINGS}/flag-ground.webp`, "", 793, 360, 0.3757, 11.55, 0.9, { lean: 66 }),
   card("flag", `${PAINTINGS}/flag-planted.webp`, "Painting of the United States flag on its gold pole, held out by a rod along its top edge", 716, 1287, 0.38, 12, 2.5, { dab: [0.5, 0.85] }),
   card("seismometer", `${PAINTINGS}/seismometer.webp`, "Painting of the seismometer: a gold drum on a tray, with a blue solar panel on each side and an aerial", 1353, 747, 0.46, 9, 1.55, { dab: [0.5, 0.5] }),
   card("mirror", `${PAINTINGS}/laser-mirror.webp`, "Painting of the laser mirror: a tilted tray holding a hundred round glass reflectors", 923, 720, 0.53, 8, 1.3),
   card("rocks", `${PAINTINGS}/rock-box.webp`, "Painting of an open metal box full of grey Moon rocks", 979, 692, 0.595, 7, 1),
   card("descent", `${PAINTINGS}/eagle-descent.webp`, "Painting of Eagle's bottom half standing alone on its four legs", 1207, 508, 0.7, 22, 3.95),
   card("liftoff", `${PAINTINGS}/liftoff.webp`, "Painting of Eagle's top half rising on the flame of its engine", 850, 1033, 0.702, 22.4, 5.8, { lift: 3.7, dab: [0.5, 0.6] }),
-  card("flag-fallen", `${PAINTINGS}/flag-fallen.webp`, "Painting of the flag lying on the ground, blown over by the liftoff", 1109, 739, 0.795, 8, 1.7, { lean: 62 }),
   card("mirror-beam", `${PAINTINGS}/laser-mirror-beam.webp`, "Painting of a green laser beam from Earth striking the mirror and bouncing back", 831, 1821, 0.9, 9, 3.6, { dab: [0.35, 0.2] }),
   // The story ends where it began: Eagle's bottom half, still there today.
   card("still-here", `${PAINTINGS}/eagle-descent.webp`, "Painting of Eagle's bottom half, still standing on the Moon today", 1207, 508, 0.975, 21, 3.95),
-  card("earth", `${PAINTINGS}/earth.webp`, "Watercolour of planet Earth seen whole from space", 1232, 1233, 0.86, 75, 8.2, { lift: 15, isInSky: true, dab: [0.4, 0.6] }),
+  card("earth", `${PHOTOS}/earth.webp`, "Planet Earth seen whole from space", 1300, 1300, 0.86, 75, 8, { lift: 15, isInSky: true }),
 ];
 
 const FACTS = [
@@ -173,21 +121,112 @@ const FACTS = [
 ];
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
+/** Longest the loading screen waits before letting the reader in anyway. */
+const LOAD_TIMEOUT_MS = 15000;
+/** The loading ring creeps toward this on time alone, about two thirds of the way per LOAD_CREEP_MS. */
+const LOAD_CREEP_MAX = 0.9;
+const LOAD_CREEP_MS = 2500;
+const smoothstep = (from: number, to: number, n: number) => {
+  const t = clamp01((n - from) / (to - from));
+  return t * t * (3 - 2 * t);
+};
 const RING_LENGTH = 2 * Math.PI * 21;
 
-const lerp = (a: Rgb, b: Rgb, t: number): Rgb => [
-  Math.round(a[0] + (b[0] - a[0]) * t),
-  Math.round(a[1] + (b[1] - a[1]) * t),
-  Math.round(a[2] + (b[2] - a[2]) * t),
-];
-const css = (c: Rgb) => `rgb(${c[0]} ${c[1]} ${c[2]})`;
+/** When each line arrives and leaves, as a fraction of its own paragraph's share of the scroll. */
+const LINE_IN = 0.05;
+const LINE_STAGGER = 0.05;
+const LINE_FADE = 0.14;
+const BEAT_OUT = 0.82;
+/** How far either side of a chapter boundary the camera takes to swing to the other side. */
+const SWING_BEFORE = 0.05;
+const SWING_AFTER = 0.03;
+
+/** -1 when the words are on the left, 1 on the right; eased across each chapter boundary. */
+const sideAt = (p: number) =>
+  CHAPTERS.reduce((side, chapter, i) => (i === 0 ? side : side + (SIDE_VALUE[chapter.side] - SIDE_VALUE[CHAPTERS[i - 1].side]) * smoothstep(chapter.at - SWING_BEFORE, chapter.at + SWING_AFTER, p)), SIDE_VALUE[CHAPTERS[0].side]);
+
+const PLACE: Record<Side, string> = {
+  left: "md:left-[8vw] md:top-1/2 md:-translate-y-1/2",
+  right: "md:left-auto md:right-[7vw] md:top-1/2 md:-translate-y-1/2",
+};
 
 export function EagleStory() {
   const rootRef = useRef<HTMLElement>(null);
   const lenis = useLenis();
   // What the 3D scene reads every frame. Written by the scroll handler below.
-  const stage = useRef<StageState>({ p: 0, haze: CHAPTERS[0].light.haze, ground: CHAPTERS[0].light.ground, paper: CHAPTERS[0].light.haze });
+  const stage = useRef<StageState>({ p: 0, side: SIDE_VALUE[CHAPTERS[0].side] });
   const [isMoving, setIsMoving] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const loaderRingRef = useRef<SVGCircleElement>(null);
+  // What has really loaded. The bar eases toward it every frame instead of jumping between reports.
+  const loadTarget = useRef(0);
+  const showProgress = (fraction: number) => {
+    loadTarget.current = Math.max(loadTarget.current, fraction);
+  };
+
+  // A reload always starts the journey from the beginning, never halfway along it.
+  useEffect(() => {
+    const previous = history.scrollRestoration;
+    history.scrollRestoration = "manual";
+    window.scrollTo(0, 0);
+    return () => {
+      history.scrollRestoration = previous;
+    };
+  }, []);
+  useEffect(() => {
+    lenis?.scrollTo(0, { immediate: true, force: true });
+  }, [lenis]);
+
+  // Counts up smoothly through every number; holds at 100 for a moment before the Moon appears.
+  useEffect(() => {
+    if (!isMoving || isReady) return;
+    let shown = 0;
+    const start = performance.now();
+    let last = start;
+    let frame = requestAnimationFrame(function tick(now) {
+      const dt = Math.min(0.1, (now - last) / 1000);
+      last = now;
+      // Files report progress in bursts, with long quiet gaps while they parse. A slow creep
+      // toward 90% keeps the ring moving through those gaps; only the real finish takes it to 100.
+      const creep = LOAD_CREEP_MAX * (1 - Math.exp(-(now - start) / LOAD_CREEP_MS));
+      const target = loadTarget.current >= 1 ? 1 : Math.max(loadTarget.current, creep);
+      // Eases toward what has loaded, never slower than a steady 25% a second, so it always lands.
+      shown = Math.min(target, shown + Math.max((target - shown) * (1 - Math.exp(-dt * 5)), dt * 0.25));
+      // pathLength is 1, so the dash offset is simply what is left to load.
+      loaderRingRef.current?.setAttribute("stroke-dashoffset", String(1 - shown));
+      if (shown >= 1) {
+        frame = window.setTimeout(() => setIsReady(true), 280);
+        return;
+      }
+      frame = requestAnimationFrame(tick);
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(frame);
+    };
+  }, [isMoving, isReady]);
+
+  // No scrolling until the Moon is there to scroll over. A slow network still gets in after a while.
+  useEffect(() => {
+    if (!isMoving || isReady) {
+      lenis?.start();
+      return;
+    }
+    lenis?.stop();
+    const fallback = window.setTimeout(() => setIsReady(true), LOAD_TIMEOUT_MS);
+    return () => window.clearTimeout(fallback);
+  }, [isMoving, isReady, lenis]);
+
+  // Once loaded, the opening words write themselves in, line by line.
+  useEffect(() => {
+    if (!isReady) return;
+    const lines = rootRef.current?.querySelector("[data-chapter]")?.querySelectorAll("[data-line]");
+    if (!lines?.length) return;
+    const intro = gsap.from(lines, { opacity: 0, y: 22, filter: "blur(8px)", clipPath: "inset(-20% 100% -20% 0)", duration: 1.1, ease: "power3.out", stagger: 0.09, delay: 0.35 });
+    return () => {
+      intro.kill();
+    };
+  }, [isReady]);
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: no-preference)");
     const sync = () => setIsMoving(query.matches);
@@ -209,86 +248,92 @@ export function EagleStory() {
       const root = rootRef.current;
       if (!root) return;
       const q = gsap.utils.selector(root);
-      const scene = q("[data-scene]")[0];
-      const reader = q("[data-reader]")[0];
-      const poem = q("[data-poem]")[0];
-      const lines = q("[data-line]");
+      const blocks = q("[data-chapter]");
       const steps = q("[data-step]");
       const up = q("[data-up]")[0];
       const ring = q("[data-ring]")[0];
       const hint = q("[data-hint]")[0];
+      const [scrimLeft, scrimRight] = ["left", "right"].map((name) => q(`[data-scrim=${name}]`)[0]);
+      const chapterLines = blocks.map((block) => Array.from(block.querySelectorAll<HTMLElement>("[data-line]")));
+      // Last value written per line, so an unchanged line costs nothing on the next frame.
+      const written = new Map<HTMLElement, number>();
       const mm = gsap.matchMedia();
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         const state = { p: 0 };
         let activeStep = -1;
 
-        // One function lays out the whole scene for a scroll progress. Everything is a transform,
-        // opacity or filter on an element that already has its own layer, plus the light for the scene.
+        // Lays out the words and tells the scene where to look, for one scroll progress. Only
+        // transforms, opacity and filter change, so the browser never has to lay the page out again.
         const apply = () => {
-          // The light: blend from the current chapter's colours to the next one's.
-          let index = 0;
-          while (index < CHAPTERS.length - 1 && state.p >= CHAPTERS[index + 1].at) index++;
-          const next = Math.min(index + 1, CHAPTERS.length - 1);
-          const span = CHAPTERS[next].at - CHAPTERS[index].at;
-          const mix = span > 0 ? clamp01((state.p - CHAPTERS[index].at) / span) : 0;
-          const mode = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
-          const from = CHAPTERS[index][mode];
-          const to = CHAPTERS[next][mode];
-          const haze = lerp(from.haze, to.haze, mix);
-          const ground = lerp(from.ground, to.ground, mix);
-          scene.style.setProperty("--sky", css(lerp(from.sky, to.sky, mix)));
-          scene.style.setProperty("--haze", css(haze));
-          stage.current.p = state.p;
-          stage.current.haze = haze;
-          stage.current.ground = ground;
-          // Unpainted paper: near white by day. At night it is a grey well clear of the dark sky,
-          // so the land and the cut-outs can still be made out before they are painted.
-          stage.current.paper = mode === "dark" ? [Math.min(255, haze[0] * 2.1), Math.min(255, haze[1] * 2.1), Math.min(255, haze[2] * 2.1)] : haze;
+          const p = state.p;
+          const side = sideAt(p);
+          stage.current.p = p;
+          stage.current.side = side;
 
-          // The chapter list switches a little before the colours finish arriving.
-          const step = mix > 0.85 ? next : index;
+          scrimLeft.style.opacity = String(clamp01(-side));
+          scrimRight.style.opacity = String(clamp01(side));
+
+          BEATS.forEach((_, i) => {
+            const local = p * BEATS.length - i;
+            const isLast = i === BEATS.length - 1;
+            chapterLines[i].forEach((line, k) => {
+              // The opening words are there once the page has loaded; the last paragraph stays until the page ends.
+              const enter = i === 0 ? 1 : clamp01((local - LINE_IN - k * LINE_STAGGER) / LINE_FADE);
+              const leave = isLast ? 0 : clamp01((local - BEAT_OUT - k * 0.008) / LINE_FADE);
+              const shown = enter * (1 - leave);
+              const key = Math.round((enter - leave) * 1000);
+              if (written.get(line) === key) return;
+              written.set(line, key);
+              // A line writes itself in from the left as it rises out of a blur, then lifts away blurring.
+              const eased = 1 - (1 - enter) ** 3;
+              const blur = (1 - eased + leave) * 7;
+              line.style.opacity = String(shown);
+              line.style.transform = `translate3d(0, ${((1 - eased) * 22 - leave * 26).toFixed(1)}px, 0)`;
+              line.style.filter = blur > 0.15 ? `blur(${blur.toFixed(1)}px)` : "none";
+              line.style.clipPath = eased < 0.999 ? `inset(-20% ${((1 - eased) * 100).toFixed(1)}% -20% 0)` : "none";
+            });
+          });
+
+          let step = 0;
+          while (step < CHAPTERS.length - 1 && p >= CHAPTERS[step + 1].at) step++;
           if (step !== activeStep) {
             activeStep = step;
             steps.forEach((el, i) => el.setAttribute("aria-current", i === step ? "step" : "false"));
           }
-          up.dataset.on = String(state.p > 0.03);
-          ring.style.strokeDashoffset = String(RING_LENGTH * (1 - state.p));
-          hint.style.opacity = String(clamp01(1 - state.p * 30));
-
-          // The poem slides up inside its window; each line is sharp at the middle of the window
-          // and blurs toward its top and bottom edges.
-          const windowH = reader.clientHeight;
-          const shift = windowH * 0.3 - state.p * (poem.scrollHeight - windowH * 0.45);
-          poem.style.transform = `translate3d(0, ${shift}px, 0)`;
-          lines.forEach((line) => {
-            const centre = line.offsetTop + line.offsetHeight / 2 + shift;
-            // The middle half of the window stays fully sharp; only the outer edges soften.
-            const far = clamp01((Math.abs(centre - windowH * 0.45) / (windowH * 0.5) - 0.5) / 0.5);
-            const soft = far * far;
-            line.style.opacity = String(1 - soft * 0.9);
-            line.style.filter = soft > 0.02 ? `blur(${(soft * 7).toFixed(1)}px)` : "none";
-          });
+          up.dataset.on = String(p > 0.03);
+          ring.style.strokeDashoffset = String(RING_LENGTH * (1 - p));
+          hint.style.opacity = String(clamp01(1 - p * 30));
         };
 
         const tween = gsap.to(state, {
           p: 1,
           ease: "none",
           onUpdate: apply,
-          scrollTrigger: { trigger: "[data-journey]", start: "top top", end: "bottom bottom", scrub: 1.1, onRefresh: apply },
+          scrollTrigger: { trigger: "[data-journey]", start: "top top", end: "bottom bottom", scrub: 1.6, onRefresh: apply },
         });
         apply();
-        gsap.from(reader, { opacity: 0, filter: "blur(12px)", duration: 1.4, ease: "power3.out", delay: 0.2 });
 
-        // The colours come from the script, so a theme switch has to repaint them.
-        const themeWatch = new MutationObserver(apply);
-        themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+        // As the closing section rises over the scene, the story's words and controls step aside.
+        const handOff = gsap.to("[data-overlay]", {
+          autoAlpha: 0,
+          ease: "none",
+          scrollTrigger: { trigger: "[data-closing]", start: "top 90%", end: "top 55%", scrub: true },
+        });
+        const rises = q("[data-rise]").map((el) =>
+          gsap.from(el, { opacity: 0, y: 36, duration: 1, ease: "power3.out", scrollTrigger: { trigger: el, start: "top 88%", once: true } }),
+        );
 
         return () => {
-          themeWatch.disconnect();
           tween.scrollTrigger?.kill();
           tween.kill();
-          for (const name of ["--sky", "--haze"]) scene.style.removeProperty(name);
+          handOff.scrollTrigger?.kill();
+          handOff.kill();
+          rises.forEach((rise) => {
+            rise.scrollTrigger?.kill();
+            rise.kill();
+          });
+          written.clear();
         };
       });
       return () => mm.revert();
@@ -297,63 +342,81 @@ export function EagleStory() {
   );
 
   return (
-    <article ref={rootRef}>
+    <article ref={rootRef} className="relative">
       <h1 className="sr-only">Eagle: the half of the Apollo 11 lunar module that stayed on the Moon</h1>
 
-      {/* Tall section, sticky scene: the vertical scroll is spent on a sideways journey. */}
-      <section data-journey aria-label="Eagle's story" className="relative h-[420svh] motion-reduce:h-auto">
+      {/* The scene stays behind the whole page: first the journey plays over it, then the closing section scrolls across it. */}
+      <div
+        data-scene
+        className="sticky top-0 h-svh overflow-hidden bg-[linear-gradient(to_bottom,#000_0%,#08080a_38%,#333335_60%)] motion-reduce:static motion-reduce:h-auto motion-reduce:overflow-visible"
+      >
+        {isMoving && (
+          <div className="absolute inset-0">
+            <MoonScene stage={stage} cards={CARDS} onProgress={showProgress} />
+          </div>
+        )}
+
+        {/* Covers the page until the land, the sky and every picture have arrived. */}
         <div
-          data-scene
-          className="sticky top-0 h-svh overflow-hidden bg-[radial-gradient(ellipse_60%_46%_at_76%_34%,var(--haze),transparent_72%),linear-gradient(to_bottom,var(--sky)_0%,var(--haze)_62%)] motion-reduce:static motion-reduce:h-auto motion-reduce:overflow-visible"
+          role="status"
+          aria-live="polite"
+          data-ready={isReady}
+          className="absolute inset-0 z-[95] grid place-items-center bg-[#050506] transition-[opacity,visibility] duration-700 ease-out data-[ready=true]:invisible data-[ready=true]:opacity-0 motion-reduce:hidden"
         >
-          {/* The land and everything standing on it: one WebGL scene. */}
-          {isMoving && (
-            <div className="absolute inset-0">
-              <MoonScene stage={stage} cards={CARDS} />
-            </div>
-          )}
-
-          {/* With reduced motion the story is a plain page: the same pictures, standing still. */}
-          <div className="hidden flex-wrap items-end gap-8 px-4 pt-32 motion-reduce:flex">
-            {CARDS.filter((item) => item.alt).map((item) => (
-              <Image key={item.key} src={item.src} alt={item.alt} width={item.width} height={item.pixelHeight} sizes="50vw" className="h-[30svh] w-auto" />
-            ))}
+          {/* A hairline circle that draws itself closed as the scene arrives. */}
+          <div className="relative grid size-28 place-items-center">
+            <svg viewBox="0 0 100 100" aria-hidden="true" className="absolute inset-0 -rotate-90">
+              <circle cx="50" cy="50" r="49.5" fill="none" stroke="var(--border)" strokeWidth="0.75" vectorEffect="non-scaling-stroke" />
+              <circle ref={loaderRingRef} cx="50" cy="50" r="49.5" fill="none" stroke="var(--text)" strokeWidth="1" vectorEffect="non-scaling-stroke" pathLength="1" strokeDasharray="1" strokeDashoffset="1" />
+            </svg>
+            <span className="text-caption font-normal text-text-muted">Loading</span>
           </div>
+        </div>
 
-          {/* A wash of bare paper behind the poem, so the words never sit on painted ground. */}
-          <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-[48%] bg-[linear-gradient(to_right,var(--haze)_0%,var(--haze)_30%,transparent_100%)] opacity-70 motion-reduce:hidden max-md:inset-x-0 max-md:bottom-auto max-md:h-[56svh] max-md:w-auto max-md:bg-[linear-gradient(to_bottom,var(--haze)_0%,var(--haze)_60%,transparent_100%)]" />
+        {/* With reduced motion the story is a plain page: the same pictures, standing still. */}
+        <div className="hidden flex-wrap items-end gap-8 px-4 pt-32 motion-reduce:flex">
+          {CARDS.map((item) => (
+            <Image key={item.key} src={item.src} alt={item.alt} width={item.width} height={item.pixelHeight} sizes="50vw" className="h-[30svh] w-auto" />
+          ))}
+        </div>
 
-          <div
-            data-reader
-            className="pointer-events-none absolute left-4 top-[12svh] z-[80] h-[46svh] w-[min(34rem,90vw)] overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_10%,black_86%,transparent)] motion-reduce:static motion-reduce:h-auto motion-reduce:px-4 motion-reduce:py-16 motion-reduce:[mask-image:none] sm:left-8 md:left-[10vw] md:top-1/2 md:h-[72svh] md:-translate-y-1/2"
-          >
-            <div data-poem className="will-change-transform">
-              {CHAPTERS.map((chapter) => (
-                <div key={chapter.title} className="pb-16">
-                  <p data-line className="pb-4 text-eyebrow text-text-muted">
-                    {chapter.when}
-                  </p>
-                  <p className="text-[1.375rem] leading-[1.45] tracking-[-0.02em] text-text md:text-[1.875rem]">
-                    {chapter.lines.map((line) => (
-                      <span key={line} data-line className="block">
-                        {line}
-                      </span>
-                    ))}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div data-overlay className="motion-reduce:contents">
+          {/* Shade on the side the words are on, so they never sit on bright soil. */}
+          <div aria-hidden="true" data-scrim="left" className="pointer-events-none absolute inset-y-0 left-0 w-[60%] bg-[linear-gradient(to_right,rgb(0_0_0/0.72),rgb(0_0_0/0.45)_45%,transparent)] max-md:hidden motion-reduce:hidden" />
+          <div aria-hidden="true" data-scrim="right" className="pointer-events-none absolute inset-y-0 right-0 w-[60%] bg-[linear-gradient(to_left,rgb(0_0_0/0.72),rgb(0_0_0/0.45)_45%,transparent)] opacity-0 max-md:hidden motion-reduce:hidden" />
+          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[55%] bg-[linear-gradient(to_bottom,rgb(0_0_0/0.6),transparent)] md:hidden motion-reduce:hidden" />
 
-          <nav aria-label="Chapters" className="absolute bottom-4 left-2 z-[90] motion-reduce:hidden sm:left-6 md:bottom-8 md:left-[calc(10vw-0.75rem)]">
-            <ol className="flex items-center rounded-full bg-surface-raised px-1">
+          {BEATS.map(({ chapter, chapterIndex, paragraph, lines }) => (
+            <section
+              key={`${chapter.title}-${paragraph}`}
+              data-chapter
+              aria-label={paragraph === 0 ? chapter.title : undefined}
+              className={`pointer-events-none absolute inset-x-4 top-[13svh] z-[80] md:inset-x-auto md:w-[min(33rem,40vw)] ${PLACE[chapter.side]} motion-reduce:static motion-reduce:translate-none motion-reduce:px-4 motion-reduce:py-12`}
+            >
+              <p data-line className="flex items-center gap-3 pb-4 text-eyebrow text-text-muted">
+                <span className="tabular-nums text-text">0{chapterIndex + 1}</span>
+                <span aria-hidden="true" className="h-px w-6 bg-current" />
+                {chapter.when}
+              </p>
+              <p className="text-[1.375rem] leading-[1.45] tracking-[-0.02em] text-text md:text-[1.875rem]">
+                {lines.map((line) => (
+                  <span key={line} data-line className="block will-change-[transform,opacity]">
+                    {line}
+                  </span>
+                ))}
+              </p>
+            </section>
+          ))}
+
+          <nav aria-label="Chapters" className="absolute bottom-4 left-1/2 z-[90] -translate-x-1/2 motion-reduce:hidden md:bottom-8">
+            <ol className="flex items-center rounded-full border border-border bg-surface-raised/80 px-1 backdrop-blur-sm">
               {CHAPTERS.map((chapter, i) => (
                 <li key={chapter.title}>
                   <button
                     type="button"
                     data-step
                     aria-current={i === 0 ? "step" : "false"}
-                    onClick={() => scrollToProgress(chapter.at === 0 ? 0 : chapter.at + 0.02)}
+                    onClick={() => scrollToProgress(chapter.at === 0 ? 0 : chapter.at + 0.4 / BEATS.length)}
                     className="group flex min-h-11 min-w-11 items-center justify-center gap-2 px-3 text-data-sm text-text-muted transition-colors duration-150 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text active:scale-[0.98] aria-[current=step]:text-text"
                   >
                     <span className="tabular-nums">0{i + 1}</span>
@@ -366,10 +429,7 @@ export function EagleStory() {
             </ol>
           </nav>
 
-          <p
-            data-hint
-            className="pointer-events-none absolute bottom-20 left-4 z-[90] border-b border-text pb-1 text-caption text-text motion-reduce:hidden sm:left-8 md:bottom-24 md:left-[10vw]"
-          >
+          <p data-hint className="pointer-events-none absolute bottom-20 left-1/2 z-[90] -translate-x-1/2 border-b border-text pb-1 text-caption text-text motion-reduce:hidden md:bottom-24">
             Scroll to explore
           </p>
 
@@ -391,35 +451,47 @@ export function EagleStory() {
             </svg>
           </button>
         </div>
-      </section>
+      </div>
 
-      <section aria-labelledby="facts-title" className="border-t border-border px-4 py-24 sm:px-8 md:px-12 md:py-32">
-        <h2 id="facts-title" className="flex items-baseline gap-4 text-eyebrow text-text-muted">
-          <span className="text-text">(01)</span>
-          Eagle in numbers
-        </h2>
-        <p className="mt-8 max-w-3xl text-h2 text-text">
-          I have been standing on the Moon for{" "}
-          <span className="tabular-nums">
-            <EagleClock />
-          </span>
-          .
-        </p>
-        <dl className="mt-16 grid gap-10 md:grid-cols-3">
-          {FACTS.map((fact) => (
-            <div key={fact.value} className="flex flex-col gap-3 border-t border-border pt-6">
+      {/* Scroll distance for the journey; the scene above is pinned over it. */}
+      <div data-journey aria-hidden="true" className="-mt-[100svh] motion-reduce:hidden" style={{ height: `${BEATS.length * BEAT_SCREENS * 100 + 100}svh` }} />
+
+      {/* The closing section scrolls over the still scene, its parts set on alternating sides. */}
+      <section
+        data-closing
+        aria-labelledby="facts-title"
+        className="relative z-10 bg-[linear-gradient(to_bottom,transparent_0%,rgb(0_0_0/0.72)_22%,rgb(0_0_0/0.86)_100%)] px-4 pb-24 pt-[40svh] sm:px-8 md:px-[8vw] md:pb-32"
+      >
+        <div data-rise className="max-w-2xl">
+          <h2 id="facts-title" className="flex items-baseline gap-4 text-eyebrow text-text-muted">
+            <span className="text-text">(01)</span>
+            Eagle in numbers
+          </h2>
+          <p className="mt-8 text-h2 text-text">
+            I have been standing on the Moon for{" "}
+            <span className="tabular-nums">
+              <EagleClock />
+            </span>
+            .
+          </p>
+        </div>
+
+        <dl className="mt-24 flex flex-col gap-20 md:mt-32 md:gap-28">
+          {FACTS.map((fact, i) => (
+            <div key={fact.value} data-rise className={`flex max-w-md flex-col gap-3 border-t border-border pt-6 ${i % 2 === 0 ? "md:ml-auto" : ""}`}>
               <dt className="order-2 max-w-[28ch] text-body text-text-muted">{fact.label}</dt>
               <dd className="order-1 text-h1 tabular-nums text-text">{fact.value}</dd>
             </div>
           ))}
         </dl>
-        <div className="mt-20 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <p className="max-w-xl text-data-sm text-text-muted">
-            Paintings made from NASA photos, public domain (AS11-40-5927, 5875, 5877, 5903; AS17-148-22727), and drawn from NASA references. Facts: NASA Space Science Data Coordinated Archive, Apollo 11 Lunar Module / EASEP.
-          </p>
+
+        <div data-rise className="mx-auto mt-28 flex max-w-2xl flex-col items-center gap-8 text-center md:mt-36">
           <PillLink href="/#stories" icon={<ArrowRightIcon width={16} height={16} />}>
             Meet the other machines
           </PillLink>
+          <p className="text-data-sm text-text-muted">
+            Paintings made from NASA photos, public domain (AS11-40-5927, 5875, 5877, 5903), and drawn from NASA references. Earth: NASA photo AS17-148-22727. Facts: NASA Space Science Data Coordinated Archive, Apollo 11 Lunar Module / EASEP.
+          </p>
         </div>
       </section>
     </article>

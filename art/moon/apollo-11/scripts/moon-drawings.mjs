@@ -1,5 +1,5 @@
 // Writes the drawings that are later repainted as watercolours for the 3D story (see paint.py).
-// Usage: node public/assets/moon/apollo-11/scripts/moon-drawings.mjs   (output: ../svg)
+// Usage: node art/moon/apollo-11/scripts/moon-drawings.mjs   (output: ../svg)
 //
 // These are for the things no Apollo 11 photo shows clearly enough for a child to read: the flag
 // (in the photos it is creased and half in shadow), the two experiments (small and far from the
