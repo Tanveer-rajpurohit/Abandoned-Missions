@@ -17,8 +17,8 @@ const MoonScene = dynamic(() => import("./MoonScene").then((m) => m.MoonScene), 
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-const PHOTOS = "/assets/moon/apollo-11/real";
-const DRAWINGS = "/assets/moon/apollo-11/svg";
+/** NASA photos repainted as watercolours by public/assets/moon/apollo-11/scripts/paint.py. */
+const PAINTINGS = "/assets/moon/apollo-11/painted";
 
 interface Palette {
   sky: Rgb;
@@ -146,13 +146,24 @@ const card = (key: string, src: string, alt: string, width: number, pixelHeight:
 });
 
 const CARDS = [
-  card("eagle", `${PHOTOS}/eagle.webp`, "The lunar module Eagle standing on the Moon, with Buzz Aldrin unloading experiments beside it", 1815, 1574, 0.03, 19, 7.2),
-  card("aldrin", `${PHOTOS}/aldrin.webp`, "Buzz Aldrin standing on the Moon in his spacesuit", 336, 719, 0.24, 10, 2.1),
-  card("bootprint", `${PHOTOS}/bootprint.webp`, "A single bootprint pressed into the grey lunar soil", 1081, 1197, 0.3, 5.5, 1.5, { lean: 58 }),
-  card("flag", `${PHOTOS}/flag.webp`, "The United States flag planted in the lunar soil", 537, 729, 0.44, 12, 2.7),
-  card("seismometer", `${PHOTOS}/easep-seismometer.webp`, "The passive seismometer experiment sitting on the lunar surface", 1081, 617, 0.5, 8, 1.8),
-  card("mirror", `${DRAWINGS}/lrrr-retroreflector.svg`, "Drawing of the laser mirror: a tilted tray of small glass reflectors", 400, 300, 0.575, 9, 1.1),
-  card("earth", `${PHOTOS}/earth.webp`, "Planet Earth seen whole from space", 1300, 1300, 0.86, 75, 8, { lift: 15, isInSky: true }),
+  // Eagle and the flag each stand on a separate patch of ground that lies flat under them.
+  card("eagle-ground", `${PAINTINGS}/eagle-ground.webp`, "", 1327, 469, 0.03, 17.3, 3.4, { lean: 68 }),
+  card("eagle", `${PAINTINGS}/eagle-lander.webp`, "Watercolour of the lunar module Eagle standing on the Moon, with Buzz Aldrin unloading experiments beside it", 1593, 1431, 0.03, 19, 6.7, { dab: [0.62, 0.7] }),
+  card("aldrin", `${PAINTINGS}/aldrin.webp`, "Watercolour of Buzz Aldrin standing on the Moon in his spacesuit, facing us, the lander reflected in his gold visor", 714, 1360, 0.2, 10, 2.2, { dab: [0.45, 0.8] }),
+  card("bootprint", `${PAINTINGS}/bootprint.webp`, "Watercolour of a single bootprint pressed into the grey lunar soil", 994, 1081, 0.255, 5.5, 1.35, { lean: 58 }),
+  card("bootprints", `${PAINTINGS}/bootprints.webp`, "Painting of a trail of bootprints leading away across the dust", 236, 797, 0.3, 7, 2.6, { lean: 70 }),
+  card("flag-ground", `${PAINTINGS}/flag-ground.webp`, "", 793, 360, 0.3757, 11.55, 0.9, { lean: 66 }),
+  card("flag", `${PAINTINGS}/flag-planted.webp`, "Painting of the United States flag on its gold pole, held out by a rod along its top edge", 716, 1287, 0.38, 12, 2.5, { dab: [0.5, 0.85] }),
+  card("seismometer", `${PAINTINGS}/seismometer.webp`, "Painting of the seismometer: a gold drum on a tray, with a blue solar panel on each side and an aerial", 1353, 747, 0.46, 9, 1.55, { dab: [0.5, 0.5] }),
+  card("mirror", `${PAINTINGS}/laser-mirror.webp`, "Painting of the laser mirror: a tilted tray holding a hundred round glass reflectors", 923, 720, 0.53, 8, 1.3),
+  card("rocks", `${PAINTINGS}/rock-box.webp`, "Painting of an open metal box full of grey Moon rocks", 979, 692, 0.595, 7, 1),
+  card("descent", `${PAINTINGS}/eagle-descent.webp`, "Painting of Eagle's bottom half standing alone on its four legs", 1207, 508, 0.7, 22, 3.95),
+  card("liftoff", `${PAINTINGS}/liftoff.webp`, "Painting of Eagle's top half rising on the flame of its engine", 850, 1033, 0.702, 22.4, 5.8, { lift: 3.7, dab: [0.5, 0.6] }),
+  card("flag-fallen", `${PAINTINGS}/flag-fallen.webp`, "Painting of the flag lying on the ground, blown over by the liftoff", 1109, 739, 0.795, 8, 1.7, { lean: 62 }),
+  card("mirror-beam", `${PAINTINGS}/laser-mirror-beam.webp`, "Painting of a green laser beam from Earth striking the mirror and bouncing back", 831, 1821, 0.9, 9, 3.6, { dab: [0.35, 0.2] }),
+  // The story ends where it began: Eagle's bottom half, still there today.
+  card("still-here", `${PAINTINGS}/eagle-descent.webp`, "Painting of Eagle's bottom half, still standing on the Moon today", 1207, 508, 0.975, 21, 3.95),
+  card("earth", `${PAINTINGS}/earth.webp`, "Watercolour of planet Earth seen whole from space", 1232, 1233, 0.86, 75, 8.2, { lift: 15, isInSky: true, dab: [0.4, 0.6] }),
 ];
 
 const FACTS = [
@@ -290,7 +301,7 @@ export function EagleStory() {
       <h1 className="sr-only">Eagle: the half of the Apollo 11 lunar module that stayed on the Moon</h1>
 
       {/* Tall section, sticky scene: the vertical scroll is spent on a sideways journey. */}
-      <section data-journey aria-label="Eagle's story" className="relative h-[700svh] motion-reduce:h-auto">
+      <section data-journey aria-label="Eagle's story" className="relative h-[420svh] motion-reduce:h-auto">
         <div
           data-scene
           className="sticky top-0 h-svh overflow-hidden bg-[radial-gradient(ellipse_60%_46%_at_76%_34%,var(--haze),transparent_72%),linear-gradient(to_bottom,var(--sky)_0%,var(--haze)_62%)] motion-reduce:static motion-reduce:h-auto motion-reduce:overflow-visible"
@@ -304,7 +315,7 @@ export function EagleStory() {
 
           {/* With reduced motion the story is a plain page: the same pictures, standing still. */}
           <div className="hidden flex-wrap items-end gap-8 px-4 pt-32 motion-reduce:flex">
-            {CARDS.map((item) => (
+            {CARDS.filter((item) => item.alt).map((item) => (
               <Image key={item.key} src={item.src} alt={item.alt} width={item.width} height={item.pixelHeight} sizes="50vw" className="h-[30svh] w-auto" />
             ))}
           </div>
@@ -404,7 +415,7 @@ export function EagleStory() {
         </dl>
         <div className="mt-20 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <p className="max-w-xl text-data-sm text-text-muted">
-            Photos: NASA, public domain (AS11-40-5927, 5875, 5877, 5948; AS17-148-22727). Facts: NASA Space Science Data Coordinated Archive, Apollo 11 Lunar Module / EASEP.
+            Paintings made from NASA photos, public domain (AS11-40-5927, 5875, 5877, 5903; AS17-148-22727), and drawn from NASA references. Facts: NASA Space Science Data Coordinated Archive, Apollo 11 Lunar Module / EASEP.
           </p>
           <PillLink href="/#stories" icon={<ArrowRightIcon width={16} height={16} />}>
             Meet the other machines
