@@ -1,5 +1,5 @@
 // Writes the Moon cutout SVGs and their contact sheet.
-// Usage: node public/assets/moon/apollo-11/scripts/moon-assets.mjs   (output: ../svg)
+// Usage: node art/moon/apollo-11/scripts/moon-assets.mjs   (output: ../svg)
 //
 // The drawings are plain vector shapes with no filters, so they render the same in every
 // viewer and at every size; paint and fade effects belong to the scene's shader.
