@@ -88,8 +88,7 @@ export const apollo11: Story = {
     { label: "NASA: Apollo 11 mission", href: "https://www.nasa.gov/mission/apollo-11/" },
     { label: "NASA Photojournal: Apollo 11 landing site from orbit (PIA12909)", href: "https://photojournal.jpl.nasa.gov/catalog/PIA12909" },
   ),
-  // 3D view switched off for now. Restore to bring the button back.
-  // scene3d: "/stories/apollo-11/3d",
+  scene3d: "/stories/apollo-11/3d",
 };
 
 const ROVER = "apollo-15-rover";
