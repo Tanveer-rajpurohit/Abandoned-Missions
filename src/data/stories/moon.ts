@@ -2,7 +2,8 @@
 // Surveyor 3 docs), cut into one panel per chapter. Numbers, times and places follow NASA's records.
 import { sources, type Beat, type Story, type StoryImage } from "./types";
 
-const img = (dir: string, file: string, credit: string, alt: string): StoryImage => ({ src: `/images/stories/${dir}/${file}.jpg`, alt, credit });
+/** `note` is a small grey line under the photo, used when it was not taken on this mission or shows art. */
+const img = (dir: string, file: string, credit: string, alt: string, note?: string): StoryImage => ({ src: `/images/stories/${dir}/${file}.jpg`, alt, credit, ...(note && { note }) });
 
 function b(id: string, image: StoryImage, tick: string, title: string, when: string, lines: string[], fact: [value: string, label: string]): Beat {
   return { id, tick, title, when, lines, fact: { value: fact[0], label: fact[1] }, image };
@@ -171,14 +172,14 @@ export const apollo11: Story = {
   scene3d: "/stories/apollo-11/3d",
 };
 
-const FALCON = "apollo-15-rover";
+const FALCON = "falcon";
 
-export const apollo15Rover: Story = {
+export const falcon: Story = {
   slug: FALCON,
   title: "Falcon",
   subtitle: "At the foot of the mountains",
   eyebrow: "Apollo 15 · 1971 · from NASA's records",
-  cover: { src: "/images/stories/apollo-15-rover.jpg", alt: "Astronaut Jim Irwin working beside the lunar rover, with Mount Hadley behind", credit: "AS15-86-11603" },
+  cover: { src: "/images/stories/falcon.jpg", alt: "Astronaut Jim Irwin working beside the lunar rover, with Mount Hadley behind", credit: "AS15-86-11603" },
   beats: [
     b(
       "look-up",
@@ -242,7 +243,7 @@ export const apollo15Rover: Story = {
     ),
     b(
       "generator",
-      img("alsep", "fuel", "AS12-46-6790", "Alan Bean on Apollo 12 lifting the fuel element for a SNAP-27 generator, the same kind that powered Apollo 15's station"),
+      img(FALCON, "alsep-station", "Apollo 15 ALSEP", "Apollo 15's ALSEP central station on the Moon, with its cables running out across the ground"),
       "Power",
       "A generator with a secret",
       "Switched on 31 July 1971",
@@ -293,9 +294,9 @@ export const apollo15Rover: Story = {
   sources: sources({ label: "NASA Space Science Data Coordinated Archive: Apollo 15 Lunar Module / ALSEP", href: "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1971-063C" }),
 };
 
-const INTREPID = "alsep";
+const INTREPID = "intrepid";
 
-export const alsep: Story = {
+export const intrepid: Story = {
   slug: INTREPID,
   title: "Intrepid",
   subtitle: "Neighbours on the Ocean of Storms",
@@ -426,7 +427,7 @@ export const surveyor3: Story = {
   beats: [
     b(
       "question",
-      img(SURVEYOR, "painting", "S69-55553", "Painting of the Surveyor 3 lander standing inside a crater on the Moon"),
+      img(SURVEYOR, "painting", "S69-55553", "Painting of the Surveyor 3 lander standing inside a crater on the Moon", "Artist's painting of Surveyor 3, made in 1969"),
       "Question",
       "What is the Moon made of?",
       "Before Apollo",
@@ -438,7 +439,7 @@ export const surveyor3: Story = {
     ),
     b(
       "eyes-hand",
-      img(SURVEYOR, "close", "AS12-48-7110", "Close view of a Surveyor 3 footpad and its surface sampler scoop"),
+      img(SURVEYOR, "sampler", "67-H-467", "Surveyor 3's own picture of its surface sampler arm reaching out over the lunar soil"),
       "Hand",
       "Eyes and a hand",
       "Designed at JPL",
@@ -450,7 +451,7 @@ export const surveyor3: Story = {
     ),
     b(
       "ignition",
-      img(SURVEYOR, "shroud", "GRC-1964-C-71093", "Engineers testing the Centaur nose cone that protected Surveyor spacecraft during launch"),
+      img(SURVEYOR, "shroud", "GRC-1964-C-71093", "Engineers testing the Centaur nose cone that protected Surveyor spacecraft during launch", "Not Surveyor 3's launch: a 1964 test of the Centaur nose cone. No launch photo of Surveyor 3 was found."),
       "Launch",
       "Ignition",
       "17 April 1967 · 07:05:01 UTC",
@@ -462,7 +463,7 @@ export const surveyor3: Story = {
     ),
     b(
       "bounces",
-      img(SURVEYOR, "crater", "AS12-48-7121", "Surveyor 3 sitting on the inside slope of its crater"),
+      img(SURVEYOR, "crater", "AS12-48-7121", "Surveyor 3 sitting on the inside slope of its crater", "Surveyor 3 where it settled, photographed by Apollo 12 in 1969"),
       "Landing",
       "Three touches",
       "20 April 1967 · 00:04:17 UTC",
@@ -474,10 +475,10 @@ export const surveyor3: Story = {
     ),
     b(
       "first-picture",
-      img("alsep", "surveyor", "AS12-48-7136", "Pete Conrad examining Surveyor 3 and its TV camera on the Moon"),
+      img(SURVEYOR, "first-picture", "67-H-446", "Surveyor 3's first picture from the Moon: part of the spacecraft against the lunar surface"),
       "Pictures",
       "The first picture",
-      "Less than an hour later",
+      "About an hour after landing",
       [
         "The camera had a wide lens and a zoom, under a mirror that could swing and tilt, so it could look around without the lander moving.",
         "Each picture took about twenty seconds to send. Patience paid off: Surveyor 3 sent back 6,326 of them.",
@@ -486,7 +487,7 @@ export const surveyor3: Story = {
     ),
     b(
       "digging",
-      img(SURVEYOR, "footpad", "PIA02978", "A Surveyor footpad resting in lunar soil next to a small trench (Surveyor 5)"),
+      img(SURVEYOR, "close", "AS12-48-7110", "Surveyor 3's footpad and its sampler scoop on the lunar soil", "Its scoop and footpad, photographed by Apollo 12 in 1969"),
       "Digging",
       "Like wet sand",
       "April 1967",
@@ -498,13 +499,13 @@ export const surveyor3: Story = {
     ),
     b(
       "night",
-      { src: "/images/stories/surveyor-3.jpg", alt: "Surveyor 3 on the Ocean of Storms, with the Apollo 12 lunar module far behind", credit: "AS12-48-7133" },
+      img(SURVEYOR, "in-crater", "67-H-463", "Surveyor 3's own picture from inside its crater, with blocks on the rim against the black sky"),
       "Silence",
       "The long night",
       "4 May 1967",
       [
         "A night on the Moon lasts about two weeks. When it began, Surveyor 3 was alone in the dark on the Ocean of Storms.",
-        "Two days later, people on Earth made contact with it for the last time. Then there was only silence.",
+        "On May 4, 1967, people on Earth made contact with it for the last time. Then there was only silence.",
       ],
       ["2 weeks", "one night on the Moon"],
     ),
@@ -513,16 +514,16 @@ export const surveyor3: Story = {
       img(SURVEYOR, "visit", "AS12-48-7134", "Astronaut Alan Bean beside Surveyor 3, with the Apollo 12 lunar module on the crater rim behind"),
       "Visitors",
       "Somebody came",
-      "November 1969",
+      "19 and 20 November 1969",
       [
-        "Then the Apollo 12 lunar module Intrepid landed about 180 meters away, carrying Charles Conrad Jr. and Alan L. Bean.",
-        "On their second moonwalk, they walked over to the quiet, inactive lander.",
+        "On November 19, 1969, the Apollo 12 lunar module Intrepid landed about 180 meters away, carrying Charles Conrad Jr. and Alan L. Bean.",
+        "On November 20, during their second moonwalk, they walked over to the quiet, inactive lander.",
       ],
       ["180 m", "from Intrepid's landing spot"],
     ),
     b(
       "finished",
-      img(SURVEYOR, "two-spacecraft", "AS12-48-7099", "Surveyor 3 in the foreground with the Apollo 12 lunar module behind it"),
+      img(SURVEYOR, "two-spacecraft", "AS12-48-7099", "Surveyor 3 in the foreground with the Apollo 12 lunar module behind it", "Photographed by Apollo 12 in 1969"),
       "Today",
       "Not abandoned. Finished.",
       "Today",

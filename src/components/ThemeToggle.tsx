@@ -4,18 +4,18 @@ import { useSyncExternalStore } from "react";
 
 import { THEME_STORAGE_KEY } from "@/lib/theme";
 
-type Theme = "light" | "grape" | "dark";
+type Theme = "light" | "dark";
 
-/** Paper is "light" (no attribute). The toggle steps through all three in this order. */
-const ORDER: Theme[] = ["light", "grape", "dark"];
-const NAMES: Record<Theme, string> = { light: "Paper", grape: "Grape", dark: "Dark" };
-const SWATCH: Record<Theme, string> = { light: "#efece4", grape: "#a9a4f7", dark: "#0d0d0c" };
-const TURN: Record<Theme, string> = { light: "rotate-0", grape: "rotate-90", dark: "rotate-180" };
+/** Paper is "light" (no attribute). */
+const ORDER: Theme[] = ["light", "dark"];
+const NAMES: Record<Theme, string> = { light: "Paper", dark: "Dark" };
+const SWATCH: Record<Theme, string> = { light: "#efece4", dark: "#0d0d0c" };
+const TURN: Record<Theme, string> = { light: "rotate-0", dark: "rotate-180" };
 
 const listeners = new Set<() => void>();
 const readTheme = (): Theme => {
   const saved = document.documentElement.dataset.theme;
-  return saved === "dark" || saved === "grape" ? saved : "light";
+  return saved === "dark" ? "dark" : "light";
 };
 
 function setTheme(theme: Theme) {
@@ -45,7 +45,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       aria-label={`Switch to ${NAMES[next]} theme`}
       className={`group grid size-11 place-items-center ${className}`}
     >
-      {/* The filled half turns a step on each switch: paper, grape, night. */}
+      {/* The filled half turns over on each switch: paper, then night. */}
       <svg
         viewBox="0 0 24 24"
         width={20}
@@ -63,7 +63,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   );
 }
 
-/** Paper, Grape or Dark, as three labelled swatches. */
+/** Paper or Dark, as two labelled swatches. */
 export function ThemePicker({ className = "" }: { className?: string }) {
   const theme = useSyncExternalStore(subscribe, readTheme, () => "light" as Theme);
 

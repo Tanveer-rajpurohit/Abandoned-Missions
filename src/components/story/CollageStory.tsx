@@ -17,6 +17,8 @@ const BLOCKS = ["var(--pop-a)", "var(--pop-b)", "var(--pop-c)"];
 /** Sticker buttons: a flat colour, an ink outline and a hard shadow that presses in. */
 const JUMP = "inline-flex min-h-12 items-center gap-2 rounded-full border-2 border-[var(--ink)] px-5 text-[0.9375rem] font-semibold text-[var(--on-pop)] shadow-[4px_4px_0_var(--ink)] transition-[translate,box-shadow] duration-100 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_var(--ink)] active:translate-x-1 active:translate-y-1 active:shadow-none";
 /** Photos alternate between a square, a portrait and a landscape frame. */
+/** The grey line under a photo that is not from this mission. */
+const NOTE = "text-[color-mix(in_srgb,var(--ink)_55%,transparent)]";
 const FRAMES = ["aspect-square", "aspect-[4/5]", "aspect-[5/4]"];
 
 const RAIL_HEIGHT = 140;
@@ -249,15 +251,19 @@ export function CollageStory({ story }: { story: Story }) {
                   <span className={`${display.className} block whitespace-nowrap text-[1.25rem] font-extrabold leading-none tabular-nums md:text-[1.75rem]`}>{beat.fact.value}</span>
                   <span className="mt-1 block text-[0.6875rem] leading-tight md:text-[0.75rem]">{beat.fact.label}</span>
                 </p>
-                <p aria-hidden="true" data-pct className="absolute -bottom-9 left-0 text-data-sm tabular-nums opacity-60 max-md:hidden motion-reduce:hidden">
-                  100%
-                </p>
+                {beat.image.note ? (
+                  <p className={`absolute inset-x-0 top-[calc(100%+1.75rem)] text-[0.75rem] leading-snug max-md:hidden ${NOTE}`}>{beat.image.note}</p>
+                ) : (
+                  <p aria-hidden="true" data-pct className="absolute -bottom-9 left-0 text-data-sm tabular-nums opacity-60 max-md:hidden motion-reduce:hidden">
+                    100%
+                  </p>
+                )}
               </div>
+              {beat.image.note && <p className={`-mb-2 mt-3 text-center text-[0.6875rem] leading-snug md:hidden ${NOTE}`}>{beat.image.note}</p>}
               <div>
                 <p className="flex items-center gap-3 text-eyebrow">
                   <span className="tabular-nums">0{i + 1}</span>
-                  <span aria-hidden="true" className="h-px w-8 bg-current" />
-                  {beat.when}
+                                    {beat.when}
                 </p>
                 <h2 id={`collage-${beat.id}`} className={`${display.className} mt-3 max-w-[11ch] text-balance text-[clamp(2rem,min(5.2vw,8svh),5rem)] font-extrabold leading-[0.92] tracking-[-0.035em]`}>
                   {beat.title}

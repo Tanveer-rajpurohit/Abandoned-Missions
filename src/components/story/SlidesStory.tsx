@@ -76,7 +76,6 @@ export function SlidesStory({ story }: { story: Story }) {
                       <span className="tabular-nums">
                         {String(i).padStart(2, "0")} / {String(story.beats.length).padStart(2, "0")}
                       </span>
-                      <span aria-hidden="true" className="h-px w-8 bg-current" />
                     </>
                   )}
                   {slide.when}
@@ -131,6 +130,7 @@ export function SlidesStory({ story }: { story: Story }) {
                   style={{ borderColor: isCover ? PAPER : ON_POP, boxShadow: `12px 12px 0 ${isCover ? "var(--pop-a)" : ON_POP}` }}
                 />
                 <p className="absolute -bottom-9 left-0 text-data-sm opacity-70 max-md:hidden">Photo: NASA {slide.image.credit}</p>
+                {slide.image.note && <p className="absolute inset-x-0 top-[calc(100%+1.25rem)] text-[0.6875rem] leading-snug opacity-60 md:top-[calc(100%+2.75rem)] md:text-[0.75rem]">{slide.image.note}</p>}
               </div>
             </div>
           </section>
