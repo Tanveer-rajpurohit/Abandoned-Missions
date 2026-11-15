@@ -84,7 +84,9 @@ function Note({ q, pick, compact = false }: { q: QuizQuestion; pick: number; com
 function StoryLink({ q }: { q: QuizQuestion }) {
   return (
     <Link href={`/stories/${q.story.slug}`} className="mt-3 inline-flex min-h-11 items-center gap-2 text-[0.9375rem] font-semibold underline decoration-2 underline-offset-4 hover:decoration-[3px]">
-      Read the story of {q.story.title}
+      <span>
+        Read the story of <span className="whitespace-nowrap">{q.story.title}</span>
+      </span>
       <Arrow />
     </Link>
   );
