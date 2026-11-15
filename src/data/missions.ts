@@ -107,7 +107,7 @@ export const missions: Mission[] = [
     arrived: { label: "Launched", date: "3 Mar 1972" },
     lastSignal: { label: "Last signal", date: "23 Jan 2003" },
     stat: { value: "2 million years", label: "to reach Aldebaran" },
-    voice: "I was the first to fly past Jupiter. I am still going.",
+    voice: "I was built for 21 months. I lasted more than 30 years.",
     body: "Pioneer 10 was the first spacecraft to cross the asteroid belt and the first to fly past Jupiter, in December 1973. Its last faint signal reached Earth in January 2003. It carries a metal plaque showing who sent it, and it is drifting toward the red star Aldebaran.",
     image: {
       src: "/images/stories/pioneer-10.jpg",
